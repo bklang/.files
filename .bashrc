@@ -1,5 +1,6 @@
 #!/bin/bash
-# $Id .bashrc, v1.5.0 2005/07/15 10:23:22 aklang Exp $
+# $Id .bashrc, v1.5.1 2005/12/03 11:01:22 bklang Exp $
+# v1.5.1: Added dirs override to give a more functional view of the dirstack
 # v1.5.0: Added jd function to complement cd function.  This makes
 #         breadcrumbs that much more useable
 #         Also fix ever-growing .env-HOSTNAME bug
@@ -310,6 +311,14 @@ function jd {
 			fi
 		fi
 	fi
+}
+
+function dirs {
+        i=1;
+        for dir in `builtin dirs`; do
+                echo "$i: $dir"
+                i=$(($i + 1));
+        done
 }
 
 # Eastern Time Zone
