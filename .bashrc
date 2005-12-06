@@ -2,7 +2,7 @@
 #
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
-# $Id .bashrc, v1.6.0 2005/12/06 13:56:55 bklang Exp $
+# $Id .bashrc, v1.6.1 2005/12/06 14:08:55 bklang Exp $
 # v1.6.1: auto-update now saves old copy to $HOME/.bashrc.old
 # v1.6.0: Added auto-update support.  Must configure ssh to pass and sshd to
 #         receive the BASHRC and BASHRC_VER environment variables
