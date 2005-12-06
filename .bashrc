@@ -1,5 +1,6 @@
 #!/bin/bash
 # $Id .bashrc, v1.5.1 2005/12/03 11:01:22 bklang Exp $
+# v1.5.2: Broke PS1 down into manageable code bits for easier reading
 # v1.5.1: Added dirs override to give a more functional view of the dirstack
 # v1.5.0: Added jd function to complement cd function.  This makes
 #         breadcrumbs that much more useable
@@ -127,16 +128,6 @@ NETCOLOR=$BRIGHT$WHITE
 [ -r $HOME/.network ] && eval "NETCOLOR=\$NET_`cat $HOME/.network`"
 [ -r $HOME/.network ] && eval "NETDESC=\$DESC_`cat $HOME/.network`"
 
-# Prepare the titlebar string if we happen to be on an xterm (or a derivative).
-case $TERM in
-    xterm*|screen)
-        TITLEBAR='\[\033]0;\u@\h:\w\007\]'
-        ;;
-    *)
-        TITLEBAR=''
-        ;;
-esac
-
 # Find out which terminal device we are on
 TERMDEV=`tty | cut -c6-`
 
@@ -153,8 +144,33 @@ else
         ID="id"
 fi
 
+# Prepare the titlebar string if we happen to be on an xterm (or a derivative).
+case $TERM in
+    xterm*|screen)
+        TITLEBAR='\[\033]0;\u@\h:\w\007\]'
+        ;;
+    *)
+        TITLEBAR=''
+        ;;
+esac
+
+# Prints "[Last command returned error X]" where X is the return code of the
+# last executed program when not 0
+PRINTErrCode="\$(returnval=\$?
+    if [ \$returnval -ne 0 ]; then
+        echo \"\\n\[${BRIGHT}${WHITE}[${RED}\]Last command returned error \$returnval\[${WHITE}\]]\"
+    fi)"
+
+# Prints "[user@host:/path/to/cwd] (terminal device)" properly colorized for the
+# current network. "user" is printed as red if EUID=0
+TOPLINE="\[${NORMAL}\]\n[\$([ \`$ID -u\` == 0 ] && echo \[${BRIGHT}${RED}\] || echo \[${NETCOLOR}\])\u\[${NORMAL}${NETCOLOR}\]@\h:\w\[${NORMAL}\]] (${TERMDEV:-null})\n"
+
+# Prints "[date time]$ " substituting the current date and time.  "$" will print
+# as a red "#" when EUID=0
+BOTTOMLINE="[\d \t]\$([ \`$ID -u\` == 0 ] && echo \[${BRIGHT}${RED}\] || echo \[${NETCOLOR}\])\\\$\[${NORMAL}\] "
+
 # Colorize the prompt and set the xterm titlebar too
-PS1="${TITLEBAR}\$(returnval=\$?;if [ \$returnval -ne 0 ]; then echo \"\\n\[${BRIGHT}${WHITE}[${RED}\]Last command returned error \$returnval\[${WHITE}\]]\";fi)\[${NORMAL}\]\n[\$([ \`$ID -u\` == 0 ] && echo \[${BRIGHT}${RED}\] || echo \[${NETCOLOR}\])\u\[${NORMAL}${NETCOLOR}\]@\h:\w\[${NORMAL}\]] (${TERMDEV:-null})\n[\d \t]\$([ \`$ID -u\` == 0 ] && echo \[${BRIGHT}${RED}\] || echo \[${NETCOLOR}\])\\\$\[${NORMAL}\] "
+PS1="${TITLEBAR}${PRINTErrCode}${TOPLINE}${BOTTOMLINE}"
 
 # The colors defined below should map as:
 # directories: bright white over blue
