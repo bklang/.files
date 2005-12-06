@@ -1,5 +1,11 @@
 #!/bin/bash
-# $Id .bashrc, v1.5.3 2005/12/06 13:49:03 bklang Exp $
+#
+# !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
+#
+# $Id .bashrc, v1.6.0 2005/12/06 13:56:55 bklang Exp $
+# v1.6.1: auto-update now saves old copy to $HOME/.bashrc.old
+# v1.6.0: Added auto-update support.  Must configure ssh to pass and sshd to
+#         receive the BASHRC and BASHRC_VER environment variables
 # v1.5.3: Added support for KRB5 to and cleaned up logic for creation of .env.sh
 # v1.5.2: Broke PS1 down into manageable code bits for easier reading
 # v1.5.1: Added dirs override to give a more functional view of the dirstack
@@ -30,6 +36,55 @@
 
 # TODO:
 # Add (better) *BSD support
+# Add alternate base64 routines (uudecode/uuencode?)
+
+# This function must be defined up top because it's used in the self-propagating
+# test below.  Caution! Do not break this functionality and expect auto updates
+# to work until all hosts have the new code!
+function decode_file {
+    file=$1
+    if [ -z "$file" ]; then
+        echo "Must specify a file to encode" >&2
+        return 1
+    fi
+
+    if [ -x "`which perl`" ]; then
+        PERL=`which perl`;
+         $PERL -e '
+            use strict;
+            use warnings;
+
+            use MIME::Base64 qw(decode_base64);
+            my $buf;
+
+            open(FILE, $ARGV[0]) or die "$!";
+            while (read(FILE, $buf, 60*57)) {
+                print decode_base64($buf);
+            }
+        ' $file
+    else
+        echo "Unable to locate working base 64 encoder." >&2
+        return 1
+    fi
+}
+
+LOCAL_BASHRC_VER="1.6.1"
+# If BASHRC is already set we've already run
+if [ ! -z "$BASHRC_VER" ]; then
+    echo -e "$BASHRC_VER\n$LOCAL_BASHRC_VER" | sort -cg 2> /dev/null;
+	if [ ! $? -eq 0 ]; then
+		echo "Updating .bashrc to $BASHRC_VER" >&2
+		BASHRC_TMP=`mktemp bashrc-$(id -un)-XXXXXX`
+		echo $BASHRC > $BASHRC_TMP
+		mv $HOME/.bashrc $HOME/.bashrc.old
+		decode_file $BASHRC_TMP > $HOME/.bashrc
+		. $HOME/.bashrc
+		unlink $BASHRC_TMP
+		return 0
+	fi
+fi
+export BASHRC_VER=$LOCAL_BASHRC_VER
+
 
 # Set a safer PATH
 # Save off the system PATH
@@ -341,11 +396,38 @@ function jd {
 }
 
 function dirs {
-        i=1;
-        for dir in `builtin dirs`; do
-                echo "$i: $dir"
-                i=$(($i + 1));
-        done
+	i=1;
+	for dir in `builtin dirs`; do
+		echo "$i: $dir"
+		i=$(($i + 1));
+	done
+}
+
+function encode_file {
+	file=$1
+	if [ -z "$file" ]; then
+		echo "Must specify a file to encode" >&2
+		return 1
+	fi
+
+	if [ -x "`which perl`" ]; then
+		PERL=`which perl`;
+		 $PERL -e '
+			use strict;
+			use warnings;
+
+			use MIME::Base64 qw(encode_base64);
+			my $buf;
+
+			open(FILE, $ARGV[0]) or die "$!";
+			while (read(FILE, $buf, 60*57)) {
+				print encode_base64($buf, "");
+			}
+		' $file
+	else
+		echo "Unable to locate working base 64 encoder." >&2
+		return 1
+	fi
 }
 
 # Eastern Time Zone
@@ -353,3 +435,5 @@ export TZ="America/New_York"
 
 # And finally, remind me which host and OS I'm logged into.
 echo -e "${BRIGHT}${WHITE}$HOSTNAME `uname -rs`${NORMAL} ${NETCOLOR}${NETDESC}${NORMAL}" >&2
+
+export BASHRC="`encode_file $HOME/.bashrc`"
