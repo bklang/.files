@@ -1,5 +1,6 @@
 #!/bin/bash
-# $Id .bashrc, v1.5.1 2005/12/03 11:01:22 bklang Exp $
+# $Id .bashrc, v1.5.3 2005/12/06 13:49:03 bklang Exp $
+# v1.5.3: Added support for KRB5 to and cleaned up logic for creation of .env.sh
 # v1.5.2: Broke PS1 down into manageable code bits for easier reading
 # v1.5.1: Added dirs override to give a more functional view of the dirstack
 # v1.5.0: Added jd function to complement cd function.  This makes
@@ -271,14 +272,24 @@ set -o vi
 # Keep that neat functionality from emacs mode where CTRL-L clears the screen
 bind "\C-l":clear-screen
 
-# If we're logging in from a session that has an agent or X credentials available,
-# stow them for future screen startups
-[ ! -z "$DISPLAY" -o ! -z "$SSH_AUTH_SOCK" ] && \
-	rm -f $HOME/.env-$HOSTNAME.sh > /dev/null
-[ ! -z "$DISPLAY" ] && echo "DISPLAY=$DISPLAY" >> $HOME/.env-$HOSTNAME.sh
-[ ! -z "$SSH_AUTH_SOCK" ] && echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $HOME/.env-$HOSTNAME.sh
-# And if an environment is available for screen, use it
-[ "$TERM" == "screen" -a -r $HOME/.env-$HOSTNAME.sh ] && . $HOME/.env-$HOSTNAME.sh
+# If we're logging in from a session that has an ssh agent, X credentials,
+# or a KerberosV credentail cache available, stow them for future screen
+# startups.  Ignore this check if we're a screen so we don't mangle the 
+# environment with old information
+if [ "$TERM" != "screen" ]; then
+    [ ! -z "$DISPLAY" -o ! -z "$SSH_AUTH_SOCK" -o ! -z "$KRB5CCNAME" ] && \
+    	rm -f $HOME/.env-$HOSTNAME.sh > /dev/null
+    [ ! -z "$DISPLAY" ] && echo "DISPLAY=$DISPLAY" >> \
+        $HOME/.env-$HOSTNAME.sh
+    [ ! -z "$SSH_AUTH_SOCK" ] && echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> \
+        $HOME/.env-$HOSTNAME.sh
+    [ ! -z "$KRB5CCNAME" ] && echo "KRB5CCNAME=$KRB5CCNAME" >> \
+        $HOME/.env-$HOSTNAME.sh
+else
+    # And if an environment is available for screen, use it
+    [ "$TERM" == "screen" -a -r $HOME/.env-$HOSTNAME.sh ] && \
+        . $HOME/.env-$HOSTNAME.sh
+fi
 
 # Check for User-Defined aliases:
 [ -f $HOME/.alias ] && . $HOME/.alias
