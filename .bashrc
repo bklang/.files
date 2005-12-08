@@ -1,8 +1,10 @@
 #!/bin/bash
+LOCAL_BASHRC_VER="1.6.2"
 #
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
-# $Id .bashrc, v1.6.1 2005/12/06 14:08:55 bklang Exp $
+# $Id .bashrc, v1.6.2 2005/12/07 19:00:13 bklang Exp $
+# v1.6.2: Added protection to my cd when ~ was passed in (like via jd)
 # v1.6.1: auto-update now saves old copy to $HOME/.bashrc.old
 # v1.6.0: Added auto-update support.  Must configure ssh to pass and sshd to
 #         receive the BASHRC and BASHRC_VER environment variables
@@ -68,7 +70,6 @@ function decode_file {
     fi
 }
 
-LOCAL_BASHRC_VER="1.6.1"
 # If BASHRC is already set we've already run
 if [ ! -z "$BASHRC_VER" ]; then
     echo -e "$BASHRC_VER\n$LOCAL_BASHRC_VER" | sort -cg 2> /dev/null;
@@ -358,7 +359,7 @@ umask 027
 # Push directory changes on the stack.  This gives us a 'breadcrumb' style
 # trail to backtrack.  Should be handy
 function cd {
-	DIR=$1
+	DIR=`echo $1 | sed -e "s#^~#$HOME#"`
 	if [ -z "$DIR" -o "$DIR" == "~" ]; then
 		DIR=$HOME;
 	fi
