@@ -1,9 +1,11 @@
 #!/bin/bash
-LOCAL_BASHRC_VER="1.6.2"
+LOCAL_BASHRC_VER="1.6.3"
 #
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id .bashrc, v1.6.2 2005/12/07 19:00:13 bklang Exp $
+# v1.6.3: Update to jd, cd, dirs to handle directory targets with spaces and
+#         properly format dirs output for targets with spaces
 # v1.6.2: Added protection to my cd when ~ was passed in (like via jd)
 # v1.6.1: auto-update now saves old copy to $HOME/.bashrc.old
 # v1.6.0: Added auto-update support.  Must configure ssh to pass and sshd to
@@ -389,17 +391,18 @@ function jd {
 				echo "Directory stack too shallow for $JUMP level jump." >&2
 				return 1
 			else
-				let LEVEL=$JUMP-1
-				cd ${DIRSTACK[$LEVEL]}
+				let LEVEL=$JUMP
+				cd "${DIRSTACK[$LEVEL]}"
 			fi
 		fi
 	fi
 }
 
 function dirs {
-	i=1;
-	for dir in `builtin dirs`; do
-		echo "$i: $dir"
+	i=0;
+        while ([ "${DIRSTACK[$i]}" ]); do
+	#for dir in `builtin dirs`; do
+		echo "$i: ${DIRSTACK[$i]}"
 		i=$(($i + 1));
 	done
 }
