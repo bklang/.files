@@ -3,7 +3,7 @@ LOCAL_BASHRC_VER="1.6.3"
 #
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
-# $Id .bashrc, v1.6.2 2005/12/07 19:00:13 bklang Exp $
+# $Id$
 # v1.6.3: Update to jd, cd, dirs to handle directory targets with spaces and
 #         properly format dirs output for targets with spaces
 # v1.6.2: Added protection to my cd when ~ was passed in (like via jd)
