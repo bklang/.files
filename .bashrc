@@ -1,11 +1,11 @@
 #!/bin/bash
-LOCAL_BASHRC_VER="1.6.3"
+LOCAL_BASHRC_VER="1.6.4"
 #
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
-# v1.6.3: Update to jd, cd, dirs to handle directory targets with spaces and
-#         properly format dirs output for targets with spaces
+# v1.6.4: Moved environment preservation into function (mkenv)
+# v1.6.3: Minor update to custom cd to fix dirs not catching targets with spaces
 # v1.6.2: Added protection to my cd when ~ was passed in (like via jd)
 # v1.6.1: auto-update now saves old copy to $HOME/.bashrc.old
 # v1.6.0: Added auto-update support.  Must configure ssh to pass and sshd to
@@ -334,7 +334,8 @@ bind "\C-l":clear-screen
 # or a KerberosV credentail cache available, stow them for future screen
 # startups.  Ignore this check if we're a screen so we don't mangle the 
 # environment with old information
-if [ "$TERM" != "screen" ]; then
+function mkenv
+{
     [ ! -z "$DISPLAY" -o ! -z "$SSH_AUTH_SOCK" -o ! -z "$KRB5CCNAME" ] && \
     	rm -f $HOME/.env-$HOSTNAME.sh > /dev/null
     [ ! -z "$DISPLAY" ] && echo "DISPLAY=$DISPLAY" >> \
@@ -343,6 +344,10 @@ if [ "$TERM" != "screen" ]; then
         $HOME/.env-$HOSTNAME.sh
     [ ! -z "$KRB5CCNAME" ] && echo "KRB5CCNAME=$KRB5CCNAME" >> \
         $HOME/.env-$HOSTNAME.sh
+}
+
+if [ "$TERM" != "screen" ]; then
+    mkenv
 else
     # And if an environment is available for screen, use it
     [ "$TERM" == "screen" -a -r $HOME/.env-$HOSTNAME.sh ] && \
