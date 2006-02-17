@@ -1,9 +1,10 @@
 #!/bin/bash
-LOCAL_BASHRC_VER="1.6.4"
+LOCAL_BASHRC_VER="1.6.5"
 #
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+# v1.6.5: Updating description for Jeff
 # v1.6.4: Moved environment preservation into function (mkenv)
 # v1.6.3: Minor update to custom cd to fix dirs not catching targets with spaces
 # v1.6.2: Added protection to my cd when ~ was passed in (like via jd)
@@ -170,8 +171,8 @@ DESC_rhs="Roswell High School"
 NET_stoo=$BRIGHT$CYAN
 DESC_stoo="Stoo.org / Tim Stewart"
 
-NET_tecs=$BRIGHT$MAGENTA
-DESC_tecs="Lucid Interactive / tecs.ca / Jeff Smith"
+NET_support=$BRIGHT$MAGENTA
+DESC_support="Lucid Interactive / support.alkaloid.net / Jeff Smith"
 
 NET_voffice=$BGBLUE$BRIGHT$YELLOW
 DESC_voffice="V-Office"
