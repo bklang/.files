@@ -1,9 +1,23 @@
 #!/bin/bash
-LOCAL_BASHRC_VER="1.6.5"
+LOCAL_BASHRC_VER="1.7.1"
 #
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+# v1.7.1: Added keybinding ^E to FCEDIT
+# v1.7.0:     NOTE NOTE NOTE: Backwards compatibility for auto-upgrade is BROKEN
+#             You must manually scp this file over any version 1.6.x or else
+#             IT WILL BREAK!
+#             To prevent auto-update from running unset BASHRC_VER
+#         Added new decoding routine for BSD (b64decode)
+#         Switched to tabs instead of 4 spaces for whitespace
+#         Added safety net when updating bashrc
+#         Fixed potential echo portability problems
+#         Changed BASHRC format to be more proper Base64 encoding
+#         Check for GNU before aliasing {mv,cp,rm}; caused problems on *BSD
+#         Replace all "echo -e" references with "printf"
+#         Replace all "unlink" references with "rm -f"
+#         Replaced old version check hack using sort with more proper method
 # v1.6.5: Updating description for Jeff
 # v1.6.4: Moved environment preservation into function (mkenv)
 # v1.6.3: Minor update to custom cd to fix dirs not catching targets with spaces
@@ -34,7 +48,7 @@ LOCAL_BASHRC_VER="1.6.5"
 # v1.4: Added slick screen handling from Amako
 # v1.3.1: Fixed bug missing $HOME for .network, misc superficial fixes
 # v1.3: Added check for LD_LIBRARY_PATH, moved shell spacing notation out of
-#	color vars and into PS1 (where they belong).  Also check LD_PRELOAD.
+#       color vars and into PS1 (where they belong).  Also check LD_PRELOAD.
 # v1.2: Added network color abstraction ($HOME/.network)
 # v1.1: Added check for $HOME/.alias
 # v1.0: Inital version I cared to tag.  Lots-o-cool-stuff
@@ -46,44 +60,83 @@ LOCAL_BASHRC_VER="1.6.5"
 # This function must be defined up top because it's used in the self-propagating
 # test below.  Caution! Do not break this functionality and expect auto updates
 # to work until all hosts have the new code!
+
+function undo_update {
+	echo "Error during update detected." >&2
+	cd $HOME
+	echo "Rolling back from .bashrc.bak" >&2
+	[ -r .bashrc.bak ] && mv .bashrc.bak .bashrc && echo "Success." >&2
+	echo
+	echo "If this error persists, unset BASHRC_VER before connecting again." >&2
+	echo
+	exit 0
+}
+
 function decode_file {
-    file=$1
-    if [ -z "$file" ]; then
-        echo "Must specify a file to encode" >&2
-        return 1
-    fi
+	file=$1
+	if [ -z "$file" ]; then
+		echo "Must specify a file to encode" >&2
+		return 1
+	fi
 
-    if [ -x "`which perl`" ]; then
-        PERL=`which perl`;
-         $PERL -e '
-            use strict;
-            use warnings;
+	if [ -x "`type -p b64decode`" ]; then
+		b64decode -r -p $1
+		if [ $? != 0 ]; then
+			echo "Unable to decode BASHRC with b64decode.  Aborting update." >&2
+			return 1
+		fi
+	elif [ -x "`type -p perl`" ]; then
+		PERL=`type -p perl`;
+		 $PERL -e '
+			use strict;
+			use warnings;
 
-            use MIME::Base64 qw(decode_base64);
-            my $buf;
+			use MIME::Base64 qw(decode_base64);
 
-            open(FILE, $ARGV[0]) or die "$!";
-            while (read(FILE, $buf, 60*57)) {
-                print decode_base64($buf);
-            }
-        ' $file
-    else
-        echo "Unable to locate working base 64 encoder." >&2
-        return 1
-    fi
+			open(FILE, $ARGV[0]) or die "$!";
+			while (<FILE>) {
+				if ($_ =~ /^begin-base64 644/) { next; }
+				if ($_ =~ /^====$/) { next; }
+				print decode_base64($_);
+			}
+		' $file
+		if [ $? != 0 ]; then
+			echo "Unable to decode BASHRC with perl.  Aborting update." >&2
+			return 1
+		fi
+	else
+		echo "Unable to locate working base 64 encoder." >&2
+		return 1
+	fi
 }
 
 # If BASHRC is already set we've already run
 if [ ! -z "$BASHRC_VER" ]; then
-    echo -e "$BASHRC_VER\n$LOCAL_BASHRC_VER" | sort -cg 2> /dev/null;
-	if [ ! $? -eq 0 ]; then
+	UPDATE=0
+	MAJ=`echo $BASHRC_VER | cut -d . -f 1`
+	MIN=`echo $BASHRC_VER | cut -d . -f 2`
+	REV=`echo $BASHRC_VER | cut -d . -f 3` 
+	LOCAL_MAJ=`echo $LOCAL_BASHRC_VER | cut -d . -f 1`
+	LOCAL_MIN=`echo $LOCAL_BASHRC_VER | cut -d . -f 2`
+	LOCAL_REV=`echo $LOCAL_BASHRC_VER | cut -d . -f 3`
+	if [ "$MAJ" -gt "$LOCAL_MAJ" ]; then
+		UPDATE=1
+	elif [ "$MAJ" -eq "$LOCAL_MAJ" -a "$MIN" -gt "$LOCAL_MIN" ]; then
+		UPDATE=1
+	elif [ "$MAJ" -eq "$LOCAL_MAJ" -a "$MIN" -eq "$LOCAL_MIN" -a "$REV" -gt "$LOCAL_REV" ]; then
+		UPDATE=1;
+	fi
+	if [ $UPDATE -ne 0 ]; then
 		echo "Updating .bashrc to $BASHRC_VER" >&2
 		BASHRC_TMP=`mktemp bashrc-$(id -un)-XXXXXX`
-		echo $BASHRC > $BASHRC_TMP
+		trap "undo_update $BASHRC_TMP" ERR
+		printf "$BASHRC" > $BASHRC_TMP
 		mv $HOME/.bashrc $HOME/.bashrc.old
 		decode_file $BASHRC_TMP > $HOME/.bashrc
+echo "done"
+		trap - ERR
 		. $HOME/.bashrc
-		unlink $BASHRC_TMP
+		rm -f $BASHRC_TMP
 		return 0
 	fi
 fi
@@ -96,9 +149,9 @@ SYSPATH=$PATH
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:$HOME/bin
 # Check for a system-configured PATH
 if [ -r /etc/PATH ]; then
-        # And make sure that it hasn't already been added
-        echo $PATH | grep `cat /etc/PATH` >/dev/null
-        [ $? != 0 ] && PATH=$PATH:`cat /etc/PATH`
+		# And make sure that it hasn't already been added
+		echo $PATH | grep `cat /etc/PATH` >/dev/null
+		[ $? != 0 ] && PATH=$PATH:`cat /etc/PATH`
 fi
 # Or for our own PATH
 [ -f $HOME/.PATH ] && PATH=$PATH:`cat $HOME/.PATH`
@@ -129,7 +182,7 @@ NORMAL='\033[00m'
 
 ITALIC='\033[03m'
 UNDERSCORE='\033[04m'  # only works in xterms
-BLINK='\033[05m'       # doesn't work in xterms
+BLINK='\033[05m'	   # doesn't work in xterms
 REVERSE='\033[07m'
 INVISIBLE='\033[08m'
 # \033[x;yH Moves cursor to x,y
@@ -140,9 +193,9 @@ INVISIBLE='\033[08m'
 CLEAR='\033[2J'
 
 [ -n "$LD_LIBRARY_PATH" ] &&
-	echo -e "${BRIGHT}${UNDERSCORE}${RED}${BGWHITE}WARNING: LD_LIBRARY_PATH is set: ${LD_LIBRARY_PATH}${NORMAL}" >&2
+	printf "${BRIGHT}${UNDERSCORE}${RED}${BGWHITE}WARNING: LD_LIBRARY_PATH is set: ${LD_LIBRARY_PATH}${NORMAL}" >&2
 [ -n "$LD_PRELOAD" ] &&
-	echo -e "${BRIGHT}${RED}${BGWHITE}WARNING: LD_PRELOAD is set: ${LD_PRELOAD}${NORMAL}" >&2
+	printf "${BRIGHT}${RED}${BGWHITE}WARNING: LD_PRELOAD is set: ${LD_PRELOAD}${NORMAL}" >&2
 
 NET_alkaloid=$ITALIC$BRIGHT$BLUE
 DESC_alkaloid="Alkaloid Networks"
@@ -198,28 +251,28 @@ fi
 
 # Solaris version of Linux compatible id
 if [ -x /usr/xpg4/bin/id ]; then
-        ID="/usr/xpg4/bin/id"
+		ID="/usr/xpg4/bin/id"
 	alias id=/usr/xpg4/bin/id
 else
-        ID="id"
+		ID="id"
 fi
 
 # Prepare the titlebar string if we happen to be on an xterm (or a derivative).
 case $TERM in
-    xterm*|screen)
-        TITLEBAR='\[\033]0;\u@\h:\w\007\]'
-        ;;
-    *)
-        TITLEBAR=''
-        ;;
+	xterm*|screen)
+		TITLEBAR='\[\033]0;\u@\h:\w\007\]'
+		;;
+	*)
+		TITLEBAR=''
+		;;
 esac
 
 # Prints "[Last command returned error X]" where X is the return code of the
 # last executed program when not 0
 PRINTErrCode="\$(returnval=\$?
-    if [ \$returnval -ne 0 ]; then
-        echo \"\\n\[${BRIGHT}${WHITE}[${RED}\]Last command returned error \$returnval\[${WHITE}\]]\"
-    fi)"
+	if [ \$returnval -ne 0 ]; then
+		echo \"\\n\[${BRIGHT}${WHITE}[${RED}\]Last command returned error \$returnval\[${WHITE}\]]\"
+	fi)"
 
 # Prints "[user@host:/path/to/cwd] (terminal device)" properly colorized for the
 # current network. "user" is printed as red if EUID=0
@@ -274,8 +327,10 @@ fi
 # Set pretty ls options
 ls -N / > /dev/null 2>&1
 if [ $? != 0 ]; then
+	# FIXME: Add additional test to determine MacOSX 10.3+
 	# We're probably on a BSD system or derivative
-	LS_OPTIONS="-G -p"
+	#LS_OPTIONS="-G -p"
+	LS_OPTIONS=""
 else
 	# Hopefully we're got the GNU version
 	LS_OPTIONS="-N --color=tty -T 0 -p"
@@ -286,8 +341,7 @@ alias +='pushd .'
 alias -- -='popd'
 alias ..='cd ..'
 alias ...='cd ../..'
-alias beep='echo -en "\007"'
-alias cp='cp -iv'
+alias beep='printf "\007"'
 alias dir='ls -l'
 alias l='ls -alF'
 alias la='ls -la'
@@ -295,11 +349,9 @@ alias ll='ls -l'
 alias ls='/bin/ls $LS_OPTIONS'
 alias ls-l='ls -l'
 alias md='mkdir -p'
-alias mv='mv -iv'
 alias o='less'
 alias rd='rmdir'
 alias rehash='hash -r'
-alias rm='rm -iv'
 alias which='type -p'
 
 # Attempt to locate GNU versions of common utilities
@@ -328,8 +380,13 @@ export EDITOR PAGER PATH PS1 LS_COLORS LSCOLORS VISUAL
 # I like VI capabilites on the command line
 set -o vi
 
+###
+# Bash Keybindings
+###
 # Keep that neat functionality from emacs mode where CTRL-L clears the screen
 bind "\C-l":clear-screen
+# Bind ^E to FCEDIT
+bind "\C-e":edit-and-execute-command
 
 # If we're logging in from a session that has an ssh agent, X credentials,
 # or a KerberosV credentail cache available, stow them for future screen
@@ -337,22 +394,22 @@ bind "\C-l":clear-screen
 # environment with old information
 function mkenv
 {
-    [ ! -z "$DISPLAY" -o ! -z "$SSH_AUTH_SOCK" -o ! -z "$KRB5CCNAME" ] && \
-    	rm -f $HOME/.env-$HOSTNAME.sh > /dev/null
-    [ ! -z "$DISPLAY" ] && echo "DISPLAY=$DISPLAY" >> \
-        $HOME/.env-$HOSTNAME.sh
-    [ ! -z "$SSH_AUTH_SOCK" ] && echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> \
-        $HOME/.env-$HOSTNAME.sh
-    [ ! -z "$KRB5CCNAME" ] && echo "KRB5CCNAME=$KRB5CCNAME" >> \
-        $HOME/.env-$HOSTNAME.sh
+	[ ! -z "$DISPLAY" -o ! -z "$SSH_AUTH_SOCK" -o ! -z "$KRB5CCNAME" ] && \
+		rm -f $HOME/.env-$HOSTNAME.sh > /dev/null
+	[ ! -z "$DISPLAY" ] && echo "DISPLAY=$DISPLAY" >> \
+		$HOME/.env-$HOSTNAME.sh
+	[ ! -z "$SSH_AUTH_SOCK" ] && echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> \
+		$HOME/.env-$HOSTNAME.sh
+	[ ! -z "$KRB5CCNAME" ] && echo "KRB5CCNAME=$KRB5CCNAME" >> \
+		$HOME/.env-$HOSTNAME.sh
 }
 
 if [ "$TERM" != "screen" ]; then
-    mkenv
+	mkenv
 else
-    # And if an environment is available for screen, use it
-    [ "$TERM" == "screen" -a -r $HOME/.env-$HOSTNAME.sh ] && \
-        . $HOME/.env-$HOSTNAME.sh
+	# And if an environment is available for screen, use it
+	[ "$TERM" == "screen" -a -r $HOME/.env-$HOSTNAME.sh ] && \
+		. $HOME/.env-$HOSTNAME.sh
 fi
 
 # Check for User-Defined aliases:
@@ -406,7 +463,7 @@ function jd {
 
 function dirs {
 	i=0;
-        while ([ "${DIRSTACK[$i]}" ]); do
+		while ([ "${DIRSTACK[$i]}" ]); do
 	#for dir in `builtin dirs`; do
 		echo "$i: ${DIRSTACK[$i]}"
 		i=$(($i + 1));
@@ -420,8 +477,8 @@ function encode_file {
 		return 1
 	fi
 
-	if [ -x "`which perl`" ]; then
-		PERL=`which perl`;
+	if [ -x "`type -p perl`" ]; then
+		PERL=`type -p perl`;
 		 $PERL -e '
 			use strict;
 			use warnings;
@@ -430,9 +487,11 @@ function encode_file {
 			my $buf;
 
 			open(FILE, $ARGV[0]) or die "$!";
+			print "begin-base64 644 .bashrc\\n";
 			while (read(FILE, $buf, 60*57)) {
-				print encode_base64($buf, "");
+				print encode_base64($buf, "\\n");
 			}
+			print "====\\n";
 		' $file
 	else
 		echo "Unable to locate working base 64 encoder." >&2
@@ -444,6 +503,6 @@ function encode_file {
 export TZ="America/New_York"
 
 # And finally, remind me which host and OS I'm logged into.
-echo -e "${BRIGHT}${WHITE}$HOSTNAME `uname -rs`${NORMAL} ${NETCOLOR}${NETDESC}${NORMAL}" >&2
+printf "${BRIGHT}${WHITE}$HOSTNAME `uname -rs`${NORMAL} ${NETCOLOR}${NETDESC}${NORMAL}" >&2
 
 export BASHRC="`encode_file $HOME/.bashrc`"
