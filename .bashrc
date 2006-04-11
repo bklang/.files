@@ -4,6 +4,7 @@ LOCAL_BASHRC_VER="1.7.1"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Updated voffice colors
 # v1.7.1: Added keybinding ^E to FCEDIT
 # v1.7.0:     NOTE NOTE NOTE: Backwards compatibility for auto-upgrade is BROKEN
 #             You must manually scp this file over any version 1.6.x or else
@@ -227,7 +228,7 @@ DESC_stoo="Stoo.org / Tim Stewart"
 NET_support=$BRIGHT$MAGENTA
 DESC_support="Lucid Interactive / support.alkaloid.net / Jeff Smith"
 
-NET_voffice=$BGBLUE$BRIGHT$YELLOW
+NET_voffice=$BGWHITE$RED
 DESC_voffice="V-Office"
 
 NET_speakez=$BGMAGENTA$BRIGHT$CYAN
