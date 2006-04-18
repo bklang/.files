@@ -228,6 +228,9 @@ DESC_stoo="Stoo.org / Tim Stewart"
 NET_support=$BRIGHT$MAGENTA
 DESC_support="Lucid Interactive / support.alkaloid.net / Jeff Smith"
 
+NET_cmsc=$BGGREEN$BLUE
+DESC_cmsc="CedarCrestone"
+
 NET_voffice=$BGWHITE$RED
 DESC_voffice="V-Office"
 
