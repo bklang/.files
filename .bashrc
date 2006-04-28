@@ -1,9 +1,12 @@
 #!/bin/bash
-LOCAL_BASHRC_VER="1.7.1"
+LOCAL_BASHRC_VER="1.7.2"
 #
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+# v1.7.2  Added Kerberos TGT management (akp/lkp/ckp/dkp)
+#         Added LANG=C to environment
+#         Added cmsc colors
 #         Updated voffice colors
 # v1.7.1: Added keybinding ^E to FCEDIT
 # v1.7.0:     NOTE NOTE NOTE: Backwards compatibility for auto-upgrade is BROKEN
@@ -398,14 +401,12 @@ bind "\C-e":edit-and-execute-command
 # environment with old information
 function mkenv
 {
+	local env="$HOME/.env-$HOSTNAME.sh"
 	[ ! -z "$DISPLAY" -o ! -z "$SSH_AUTH_SOCK" -o ! -z "$KRB5CCNAME" ] && \
-		rm -f $HOME/.env-$HOSTNAME.sh > /dev/null
-	[ ! -z "$DISPLAY" ] && echo "DISPLAY=$DISPLAY" >> \
-		$HOME/.env-$HOSTNAME.sh
-	[ ! -z "$SSH_AUTH_SOCK" ] && echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> \
-		$HOME/.env-$HOSTNAME.sh
-	[ ! -z "$KRB5CCNAME" ] && echo "KRB5CCNAME=$KRB5CCNAME" >> \
-		$HOME/.env-$HOSTNAME.sh
+		rm -f $env > /dev/null
+	[ ! -z "$DISPLAY" ] && echo "DISPLAY=$DISPLAY" >> $env
+	[ ! -z "$SSH_AUTH_SOCK" ] && echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $env
+	[ ! -z "$KRB5CCNAME" ] && echo "KRB5CCNAME=$KRB5CCNAME" >> $env
 }
 
 if [ "$TERM" != "screen" ]; then
@@ -423,11 +424,12 @@ fi
 umask 027
 
 # Automatically logout idle shells after 6 minutes
-#export TMOUT=360
+export TMOUT=360
 
 # Push directory changes on the stack.  This gives us a 'breadcrumb' style
 # trail to backtrack.  Should be handy
-function cd {
+function cd
+{
 	DIR=`echo $1 | sed -e "s#^~#$HOME#"`
 	if [ -z "$DIR" -o "$DIR" == "~" ]; then
 		DIR=$HOME;
@@ -438,7 +440,8 @@ function cd {
 	fi
 }
 
-function jd {
+function jd
+{
 	JUMP=$1
 	if [ -z "$JUMP" -o $JUMP -eq 0 ]; then
 		popd
@@ -465,16 +468,17 @@ function jd {
 	fi
 }
 
-function dirs {
+function dirs
+{
 	i=0;
-		while ([ "${DIRSTACK[$i]}" ]); do
-	#for dir in `builtin dirs`; do
+	while ([ "${DIRSTACK[$i]}" ]); do
 		echo "$i: ${DIRSTACK[$i]}"
 		i=$(($i + 1));
 	done
 }
 
-function encode_file {
+function encode_file
+{
 	file=$1
 	if [ -z "$file" ]; then
 		echo "Must specify a file to encode" >&2
@@ -503,8 +507,108 @@ function encode_file {
 	fi
 }
 
+# Add Kerberos principal
+function akp
+{
+	if [ -z "$1" ]; then
+		echo "Must specify a realm name for the argument." >&2
+		return 1
+	fi
+
+	local env=$HOME/.krbcca-$HOSTNAME.sh
+	[ -r $env ] && . $env
+
+	local cc=`lkp | grep $1|cut -d: -f1`
+	if [ -n "$cc" ]; then
+		echo "Reusing old credentials cache for $1"
+		export KRB5CCNAME=${KRBCCA[$cc]}
+		kinit -R ${PRINCS[$i]}
+		if [ $? != 0 ]; then
+			echo "Error renewing ticket.  Requesting a new one." >&2
+			kinit ${PRINCS[$i]}
+		fi
+	else
+		cc=`mktemp /tmp/krb5cc-XXXXXX`
+		KRB5CCNAME=$cc kinit $1
+		if [ $? == 0 ]; then
+			let i=${#PRINCS[*]}+1
+			PRINCS[$i]=$1
+			KRBCCA[$i]=$cc
+			export KRB5CCNAME=${KRBCCA[$i]}
+		        if [ ! -z "${KRBCCA[*]}" ]; then
+		                i=1
+		                printf "KRBCCA=( " > $env
+		                while ([ "${PRINCS[$i]}" ]); do
+		                        printf "[%s]=%s " $i ${KRBCCA[$i]} >> $env
+		                        let i=$i+1
+		                done
+		                printf ")\n" >> $env
+		                i=1
+		                printf "PRINCS=( " >> $env
+		                while ([ "${PRINCS[$i]}" ]); do
+		                        printf "[%s]=%s " $i ${PRINCS[$i]} >> $env
+		                        let i=$i+1
+		                done
+		                printf ")\n" >> $env
+		        fi
+
+		fi
+	fi
+
+}
+
+# List Kerberos principals
+function lkp
+{
+	local env=$HOME/.krbcca-$HOSTNAME.sh
+	[ -r $env ] && . $env
+        i=1;
+        while ([ "${PRINCS[$i]}" ]); do
+                echo "$i: ${PRINCS[$i]}"
+                i=$(($i + 1));
+        done
+}
+
+# Destroy Kerberos principals
+function dkp
+{
+	local env=$HOME/.krbcca-$HOSTNAME.sh
+	[ -r $env ] && . $env
+	i=1
+	while ([ "${KRBCCA[$i]}" ]); do
+		echo "Destroying credentials for ${PRINCS[$i]}"
+		KRB5CCNAME=${KRBCCA[$i]} kdestroy
+		let i=$i+1
+	done
+	unset KRB5CCNAME KRBCCA PRINCS
+	rm -f $env > /dev/null 2>&1
+}
+
+# Change working Kerberos principal
+function ckp
+{
+	local env=$HOME/.krbcca-$HOSTNAME.sh
+	[ -r $env ] && . $env
+	if [ -z "$1" ]; then
+		echo "Must select Kerberos principal by number" >&2
+		lkp
+		return 1
+	elif [ -n "${PRINCS[$1]}" ]; then
+		echo "Switching to ${PRINCS[$1]}"
+		export KRB5CCNAME=${KRBCCA[$1]}
+		rm -f /tmp/krb5cc_`id -u`  > /dev/null 2>&1 && \
+			ln -s $KRB5CCNAME /tmp/krb5cc_`id -u`
+	else
+		echo "Unknown principal index." >&2
+		return 1
+	fi
+}
+
+
 # Eastern Time Zone
 export TZ="America/New_York"
+# POSIX C (English)
+export LANG=C
 
 # And finally, remind me which host and OS I'm logged into.
 printf "${BRIGHT}${WHITE}$HOSTNAME `uname -rs`${NORMAL} ${NETCOLOR}${NETDESC}${NORMAL}" >&2
