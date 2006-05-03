@@ -100,7 +100,7 @@ function decode_file {
 			open(FILE, $ARGV[0]) or die "$!";
 			while (<FILE>) {
 				if ($_ =~ /^begin-base64 644/) { next; }
-				if ($_ =~ /^====$/) { next; }
+				if ($_ =~ /^====$/) { last; }
 				print decode_base64($_);
 			}
 		' $file
