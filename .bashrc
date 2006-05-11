@@ -4,6 +4,8 @@ LOCAL_BASHRC_VER="1.7.2"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Modified `lkp` to flag current principal
+#         Symlink current TGT to default location
 # v1.7.2  Added Kerberos TGT management (akp/lkp/ckp/dkp)
 #         Added LANG=C to environment
 #         Added cmsc colors
@@ -554,7 +556,8 @@ function akp
 
 		fi
 	fi
-
+	rm -f /tmp/krb5cc_`id -u`  > /dev/null 2>&1 && \
+		ln -s $KRB5CCNAME /tmp/krb5cc_`id -u`
 }
 
 # List Kerberos principals
@@ -564,7 +567,12 @@ function lkp
 	[ -r $env ] && . $env
         i=1;
         while ([ "${PRINCS[$i]}" ]); do
-                echo "$i: ${PRINCS[$i]}"
+		if [ "$KRB5CCNAME" == "${KRBCCA[$i]}" ]; then
+			printf '*'
+		else
+			printf ' '
+		fi
+                printf '%s: %s\n' $i ${PRINCS[$i]}
                 i=$(($i + 1));
         done
 }
@@ -576,7 +584,7 @@ function dkp
 	[ -r $env ] && . $env
 	i=1
 	while ([ "${KRBCCA[$i]}" ]); do
-		echo "Destroying credentials for ${PRINCS[$i]}"
+		printf 'Destroying credentials for %s\n' ${PRINCS[$i]}
 		KRB5CCNAME=${KRBCCA[$i]} kdestroy
 		let i=$i+1
 	done
@@ -590,16 +598,16 @@ function ckp
 	local env=$HOME/.krbcca-$HOSTNAME.sh
 	[ -r $env ] && . $env
 	if [ -z "$1" ]; then
-		echo "Must select Kerberos principal by number" >&2
+		printf 'Must select Kerberos principal by number' >&2
 		lkp
 		return 1
 	elif [ -n "${PRINCS[$1]}" ]; then
-		echo "Switching to ${PRINCS[$1]}"
+		printf 'Switching to %s\n' ${PRINCS[$1]}
 		export KRB5CCNAME=${KRBCCA[$1]}
 		rm -f /tmp/krb5cc_`id -u`  > /dev/null 2>&1 && \
 			ln -s $KRB5CCNAME /tmp/krb5cc_`id -u`
 	else
-		echo "Unknown principal index." >&2
+		printf "Unknown principal index." >&2
 		return 1
 	fi
 }
