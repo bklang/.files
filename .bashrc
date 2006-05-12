@@ -4,6 +4,7 @@ LOCAL_BASHRC_VER="1.7.2"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Replace /tmp with $TMPDIR, check and set $TMPDIR
 #         Modified `lkp` to flag current principal
 #         Symlink current TGT to default location
 # v1.7.2  Added Kerberos TGT management (akp/lkp/ckp/dkp)
@@ -345,6 +346,9 @@ else
 	LS_OPTIONS="-N --color=tty -T 0 -p"
 fi
 
+# Make sure we have defined a temporary directory
+[ -z "$TMPDIR" ] && export TMPDIR=/tmp
+
 # Some standard aliases
 alias +='pushd .'
 alias -- -='popd'
@@ -530,7 +534,7 @@ function akp
 			kinit ${PRINCS[$i]}
 		fi
 	else
-		cc=`mktemp /tmp/krb5cc-XXXXXX`
+		cc=`mktemp $TMPDIR/krb5cc-XXXXXX`
 		KRB5CCNAME=$cc kinit $1
 		if [ $? == 0 ]; then
 			let i=${#PRINCS[*]}+1
@@ -556,8 +560,8 @@ function akp
 
 		fi
 	fi
-	rm -f /tmp/krb5cc_`id -u`  > /dev/null 2>&1 && \
-		ln -s $KRB5CCNAME /tmp/krb5cc_`id -u`
+	rm -f $TMPDIR/krb5cc_`id -u`  > /dev/null 2>&1 && \
+		ln -s $KRB5CCNAME $TMPDIR/krb5cc_`id -u`
 }
 
 # List Kerberos principals
@@ -604,8 +608,8 @@ function ckp
 	elif [ -n "${PRINCS[$1]}" ]; then
 		printf 'Switching to %s\n' ${PRINCS[$1]}
 		export KRB5CCNAME=${KRBCCA[$1]}
-		rm -f /tmp/krb5cc_`id -u`  > /dev/null 2>&1 && \
-			ln -s $KRB5CCNAME /tmp/krb5cc_`id -u`
+		rm -f $TMPDIR/krb5cc_`id -u`  > /dev/null 2>&1 && \
+			ln -s $KRB5CCNAME $TMPDIR/krb5cc_`id -u`
 	else
 		printf "Unknown principal index." >&2
 		return 1
