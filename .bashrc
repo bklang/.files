@@ -430,7 +430,7 @@ fi
 umask 027
 
 # Automatically logout idle shells after 6 minutes
-export TMOUT=360
+#export TMOUT=360
 
 # Push directory changes on the stack.  This gives us a 'breadcrumb' style
 # trail to backtrack.  Should be handy
@@ -524,7 +524,7 @@ function akp
 	local env=$HOME/.krbcca-$HOSTNAME.sh
 	[ -r $env ] && . $env
 
-	local cc=`lkp | grep $1|cut -d: -f1`
+	local cc=`lkp | grep $1|sed -e 's/\*//'|cut -d: -f1`
 	if [ -n "$cc" ]; then
 		echo "Reusing old credentials cache for $1"
 		export KRB5CCNAME=${KRBCCA[$cc]}
