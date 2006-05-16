@@ -4,6 +4,8 @@ LOCAL_BASHRC_VER="1.7.2"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Added security check for "." in $PATH
+#         Allow $HOME/.PATH to precede /etc/PATH
 #         Replace /tmp with $TMPDIR, check and set $TMPDIR
 #         Modified `lkp` to flag current principal
 #         Symlink current TGT to default location
@@ -154,14 +156,18 @@ export BASHRC_VER=$LOCAL_BASHRC_VER
 # Save off the system PATH
 SYSPATH=$PATH
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:$HOME/bin
+# Check for a personal PATH
+[ -r $HOME/.PATH ]; then
+	# And make sure that it hasn't already been added
+	echo $PATH | grep `cat $HOME/.PATH` >/dev/null
+	[ $? != 0 ] && PATH=$PATH:`cat $HOME/.PATH`
+fi
 # Check for a system-configured PATH
 if [ -r /etc/PATH ]; then
-		# And make sure that it hasn't already been added
-		echo $PATH | grep `cat /etc/PATH` >/dev/null
-		[ $? != 0 ] && PATH=$PATH:`cat /etc/PATH`
+	# And make sure that it hasn't already been added
+	echo $PATH | grep `cat /etc/PATH` >/dev/null
+	[ $? != 0 ] && PATH=$PATH:`cat /etc/PATH`
 fi
-# Or for our own PATH
-[ -f $HOME/.PATH ] && PATH=$PATH:`cat $HOME/.PATH`
 # Append the system PATH
 PATH=$PATH:$SYSPATH
 
@@ -199,10 +205,16 @@ INVISIBLE='\033[08m'
 # \033[xD moves cursor left x spaces
 CLEAR='\033[2J'
 
+
+# Security Checks
 [ -n "$LD_LIBRARY_PATH" ] &&
-	printf "${BRIGHT}${UNDERSCORE}${RED}${BGWHITE}WARNING: LD_LIBRARY_PATH is set: ${LD_LIBRARY_PATH}${NORMAL}" >&2
+	printf "${BRIGHT}${UNDERSCORE}${RED}${BGWHITE}WARNING: LD_LIBRARY_PATH is set: ${LD_LIBRARY_PATH}${NORMAL}\n" >&2
 [ -n "$LD_PRELOAD" ] &&
-	printf "${BRIGHT}${RED}${BGWHITE}WARNING: LD_PRELOAD is set: ${LD_PRELOAD}${NORMAL}" >&2
+	printf "${BRIGHT}${RED}${BGWHITE}WARNING: LD_PRELOAD is set: ${LD_PRELOAD}${NORMAL}\n" >&2
+
+(echo $PATH | egrep '::|:\.|\.:' > /dev/null) &&
+	printf "${BRIGHT}${RED}${BGWHITE}WARNING: \".\" is in your PATH.\n" >&2
+
 
 NET_alkaloid=$ITALIC$BRIGHT$BLUE
 DESC_alkaloid="Alkaloid Networks"
