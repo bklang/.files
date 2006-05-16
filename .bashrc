@@ -157,7 +157,7 @@ export BASHRC_VER=$LOCAL_BASHRC_VER
 SYSPATH=$PATH
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:$HOME/bin
 # Check for a personal PATH
-[ -r $HOME/.PATH ]; then
+if [ -r $HOME/.PATH ]; then
 	# And make sure that it hasn't already been added
 	echo $PATH | grep `cat $HOME/.PATH` >/dev/null
 	[ $? != 0 ] && PATH=$PATH:`cat $HOME/.PATH`
