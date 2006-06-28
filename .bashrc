@@ -4,6 +4,7 @@ LOCAL_BASHRC_VER="1.7.2"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Allow for local per-host environment override ~/.localenv-$HOSTNAME.sh
 #         Added security check for "." in $PATH
 #         Allow $HOME/.PATH to precede /etc/PATH
 #         Replace /tmp with $TMPDIR, check and set $TMPDIR
@@ -348,14 +349,14 @@ fi
 
 # Set pretty ls options
 ls -N / > /dev/null 2>&1
-if [ $? != 0 ]; then
-	# FIXME: Add additional test to determine MacOSX 10.3+
-	# We're probably on a BSD system or derivative
-	#LS_OPTIONS="-G -p"
-	LS_OPTIONS=""
-else
+if [ $? == 0 ]; then
 	# Hopefully we're got the GNU version
 	LS_OPTIONS="-N --color=tty -T 0 -p"
+elif [ "`uname -s`" == "Darwin" ]; then
+	# FIXME: Add additional test to determine MacOSX 10.3+
+	LS_OPTIONS="-G -p"
+else
+	LS_OPTIONS=""
 fi
 
 # Make sure we have defined a temporary directory
@@ -633,6 +634,9 @@ function ckp
 export TZ="America/New_York"
 # POSIX C (English)
 export LANG=C
+
+# Check for local environment overrides
+[ -r $HOME/.localenv-$HOSTNAME.sh ] && . $HOME/.localenv-$HOSTNAME.sh
 
 # And finally, remind me which host and OS I'm logged into.
 printf "${BRIGHT}${WHITE}$HOSTNAME `uname -rs`${NORMAL} ${NETCOLOR}${NETDESC}${NORMAL}" >&2
