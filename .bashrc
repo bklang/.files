@@ -4,6 +4,7 @@ LOCAL_BASHRC_VER="1.7.2"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Reset term color after printing PATH warning
 #         Allow for local per-host environment override ~/.localenv-$HOSTNAME.sh
 #         Added security check for "." in $PATH
 #         Allow $HOME/.PATH to precede /etc/PATH
@@ -214,7 +215,7 @@ CLEAR='\033[2J'
 	printf "${BRIGHT}${RED}${BGWHITE}WARNING: LD_PRELOAD is set: ${LD_PRELOAD}${NORMAL}\n" >&2
 
 (echo $PATH | egrep '::|:\.|\.:' > /dev/null) &&
-	printf "${BRIGHT}${RED}${BGWHITE}WARNING: \".\" is in your PATH.\n" >&2
+	printf "${BRIGHT}${RED}${BGWHITE}WARNING: \".\" is in your PATH.${NORMAL}\n" >&2
 
 
 NET_alkaloid=$ITALIC$BRIGHT$BLUE
