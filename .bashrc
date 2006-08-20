@@ -4,6 +4,7 @@ LOCAL_BASHRC_VER="1.7.2"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Mute perl warnings (deja-vu?)
 #         Reset term color after printing PATH warning
 #         Allow for local per-host environment override ~/.localenv-$HOSTNAME.sh
 #         Added security check for "." in $PATH
@@ -110,7 +111,7 @@ function decode_file {
 				if ($_ =~ /^====$/) { last; }
 				print decode_base64($_);
 			}
-		' $file
+		' $file 2>/dev/null
 		if [ $? != 0 ]; then
 			echo "Unable to decode BASHRC with perl.  Aborting update." >&2
 			return 1
@@ -520,7 +521,7 @@ function encode_file
 				print encode_base64($buf, "\\n");
 			}
 			print "====\\n";
-		' $file
+		' $file 2>/dev/null
 	else
 		echo "Unable to locate working base 64 encoder." >&2
 		return 1
