@@ -1,9 +1,10 @@
 #!/bin/bash
-LOCAL_BASHRC_VER="1.7.2"
+LOCAL_BASHRC_VER="1.7.3"
 #
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Rev 420: This one goes out to Bryan
 #         Mute perl warnings (deja-vu?)
 #         Reset term color after printing PATH warning
 #         Allow for local per-host environment override ~/.localenv-$HOSTNAME.sh
