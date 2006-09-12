@@ -4,6 +4,7 @@ LOCAL_BASHRC_VER="1.7.3"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+# v1.7.3  Add missing 1.7.3 version tag and alkaloiddev network
 #         Rev 420: This one goes out to Bryan
 #         Mute perl warnings (deja-vu?)
 #         Reset term color after printing PATH warning
@@ -219,9 +220,12 @@ CLEAR='\033[2J'
 (echo $PATH | egrep '::|:\.|\.:' > /dev/null) &&
 	printf "${BRIGHT}${RED}${BGWHITE}WARNING: \".\" is in your PATH.${NORMAL}\n" >&2
 
-
+# Network color definitions
 NET_alkaloid=$ITALIC$BRIGHT$BLUE
 DESC_alkaloid="Alkaloid Networks"
+
+NET_alkaloiddev=$BRIGHT$BLUE$BGWHITE
+DESC_alkaloiddev="Alkaloid Networks - DEVELOPMENT"
 
 NET_anomaly=$BRIGHT$GREEN
 DESC_anomay="Team Anomaly -- Winners of DefCon XI, Interz0ne III RootFu"
