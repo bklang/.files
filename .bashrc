@@ -4,6 +4,9 @@ LOCAL_BASHRC_VER="1.7.3"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Reorder sections for usability
+#         Check for ":$" in PATH (same as :.)
+#         Whitespace, comments
 # v1.7.3  Add missing 1.7.3 version tag and alkaloiddev network
 #         Rev 420: This one goes out to Bryan
 #         Mute perl warnings (deja-vu?)
@@ -124,6 +127,36 @@ function decode_file {
 	fi
 }
 
+function encode_file
+{
+	file=$1
+	if [ -z "$file" ]; then
+		echo "Must specify a file to encode" >&2
+		return 1
+	fi
+
+	if [ -x "`type -p perl`" ]; then
+		PERL=`type -p perl`;
+		 $PERL -e '
+			use strict;
+			use warnings;
+
+			use MIME::Base64 qw(encode_base64);
+			my $buf;
+
+			open(FILE, $ARGV[0]) or die "$!";
+			print "begin-base64 644 .bashrc\\n";
+			while (read(FILE, $buf, 60*57)) {
+				print encode_base64($buf, "\\n");
+			}
+			print "====\\n";
+		' $file 2>/dev/null
+	else
+		echo "Unable to locate working base 64 encoder." >&2
+		return 1
+	fi
+}
+
 # If BASHRC is already set we've already run
 if [ ! -z "$BASHRC_VER" ]; then
 	UPDATE=0
@@ -147,19 +180,25 @@ if [ ! -z "$BASHRC_VER" ]; then
 		printf "$BASHRC" > $BASHRC_TMP
 		mv $HOME/.bashrc $HOME/.bashrc.old
 		decode_file $BASHRC_TMP > $HOME/.bashrc
-echo "done"
+		echo "done"
 		trap - ERR
 		. $HOME/.bashrc
 		rm -f $BASHRC_TMP
 		return 0
 	fi
 fi
+# The local version is the version
 export BASHRC_VER=$LOCAL_BASHRC_VER
+
+# Store the current .bashrc in memory for propagation
+export BASHRC="`encode_file $HOME/.bashrc`"
 
 
 # Set a safer PATH
 # Save off the system PATH
 SYSPATH=$PATH
+
+# Construct the user's preferred PATH
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:$HOME/bin
 # Check for a personal PATH
 if [ -r $HOME/.PATH ]; then
@@ -217,7 +256,7 @@ CLEAR='\033[2J'
 [ -n "$LD_PRELOAD" ] &&
 	printf "${BRIGHT}${RED}${BGWHITE}WARNING: LD_PRELOAD is set: ${LD_PRELOAD}${NORMAL}\n" >&2
 
-(echo $PATH | egrep '::|:\.|\.:' > /dev/null) &&
+(echo $PATH | egrep '::|:\.|\.:|:$' > /dev/null) &&
 	printf "${BRIGHT}${RED}${BGWHITE}WARNING: \".\" is in your PATH.${NORMAL}\n" >&2
 
 # Network color definitions
@@ -281,10 +320,10 @@ fi
 
 # Solaris version of Linux compatible id
 if [ -x /usr/xpg4/bin/id ]; then
-		ID="/usr/xpg4/bin/id"
-	alias id=/usr/xpg4/bin/id
+	ID="/usr/xpg4/bin/id"
+	alias id=$ID
 else
-		ID="id"
+	ID="id"
 fi
 
 # Prepare the titlebar string if we happen to be on an xterm (or a derivative).
@@ -396,6 +435,9 @@ alias which='type -p'
 [ `type -p gcp` ] && alias cp='gcp -iv'
 [ `type -p grm` ] && alias rm='grm -iv'
 
+# Check for User-Defined aliases:
+[ -f $HOME/.alias ] && . $HOME/.alias
+
 # If we are using the GNU versions of these utilities (cp, mv, rm)...
 for util in cp mv rm; do
 	$util --version > /dev/null 2>&1
@@ -409,17 +451,6 @@ done
 unset HISTFILE HISTFILESIZE
 # And save all those wonderful settings from above
 export EDITOR PAGER PATH PS1 LS_COLORS LSCOLORS VISUAL
-
-# I like VI capabilites on the command line
-set -o vi
-
-###
-# Bash Keybindings
-###
-# Keep that neat functionality from emacs mode where CTRL-L clears the screen
-bind "\C-l":clear-screen
-# Bind ^E to FCEDIT
-bind "\C-e":edit-and-execute-command
 
 # If we're logging in from a session that has an ssh agent, X credentials,
 # or a KerberosV credentail cache available, stow them for future screen
@@ -443,14 +474,8 @@ else
 		. $HOME/.env-$HOSTNAME.sh
 fi
 
-# Check for User-Defined aliases:
-[ -f $HOME/.alias ] && . $HOME/.alias
-
-# Set a slightly more restrictive umask
-umask 027
-
-# Automatically logout idle shells after 6 minutes
-#export TMOUT=360
+# Check for local environment overrides
+[ -r $HOME/.localenv-$HOSTNAME.sh ] && . $HOME/.localenv-$HOSTNAME.sh
 
 # Push directory changes on the stack.  This gives us a 'breadcrumb' style
 # trail to backtrack.  Should be handy
@@ -501,36 +526,6 @@ function dirs
 		echo "$i: ${DIRSTACK[$i]}"
 		i=$(($i + 1));
 	done
-}
-
-function encode_file
-{
-	file=$1
-	if [ -z "$file" ]; then
-		echo "Must specify a file to encode" >&2
-		return 1
-	fi
-
-	if [ -x "`type -p perl`" ]; then
-		PERL=`type -p perl`;
-		 $PERL -e '
-			use strict;
-			use warnings;
-
-			use MIME::Base64 qw(encode_base64);
-			my $buf;
-
-			open(FILE, $ARGV[0]) or die "$!";
-			print "begin-base64 644 .bashrc\\n";
-			while (read(FILE, $buf, 60*57)) {
-				print encode_base64($buf, "\\n");
-			}
-			print "====\\n";
-		' $file 2>/dev/null
-	else
-		echo "Unable to locate working base 64 encoder." >&2
-		return 1
-	fi
 }
 
 # Add Kerberos principal
@@ -636,16 +631,27 @@ function ckp
 	fi
 }
 
+###
+# User configurables
+###
+# Keep that neat functionality from emacs mode where CTRL-L clears the screen
+bind "\C-l":clear-screen
+# Bind ^E to FCEDIT
+bind "\C-e":edit-and-execute-command
+
+# I like VI capabilites on the command line
+set -o vi
+
+# Set a slightly more restrictive umask
+umask 027
+
+# Automatically logout idle shells after 6 minutes
+#export TMOUT=360
 
 # Eastern Time Zone
 export TZ="America/New_York"
 # POSIX C (English)
 export LANG=C
 
-# Check for local environment overrides
-[ -r $HOME/.localenv-$HOSTNAME.sh ] && . $HOME/.localenv-$HOSTNAME.sh
-
 # And finally, remind me which host and OS I'm logged into.
 printf "${BRIGHT}${WHITE}$HOSTNAME `uname -rs`${NORMAL} ${NETCOLOR}${NETDESC}${NORMAL}" >&2
-
-export BASHRC="`encode_file $HOME/.bashrc`"
