@@ -1,9 +1,11 @@
 #!/bin/bash
-LOCAL_BASHRC_VER="1.7.3"
+LOCAL_BASHRC_VER="1.7.4"
 #
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+# v1.7.4  Cygwin now supported
+#         Support ${HOME}s that have a space in the path
 #         Reorder sections for usability
 #         Check for ":$" in PATH (same as :.)
 #         Whitespace, comments
@@ -80,7 +82,7 @@ LOCAL_BASHRC_VER="1.7.3"
 
 function undo_update {
 	echo "Error during update detected." >&2
-	cd $HOME
+	cd "$HOME"
 	echo "Rolling back from .bashrc.bak" >&2
 	[ -r .bashrc.bak ] && mv .bashrc.bak .bashrc && echo "Success." >&2
 	echo
@@ -178,11 +180,11 @@ if [ ! -z "$BASHRC_VER" ]; then
 		BASHRC_TMP=`mktemp bashrc-$(id -un)-XXXXXX`
 		trap "undo_update $BASHRC_TMP" ERR
 		printf "$BASHRC" > $BASHRC_TMP
-		mv $HOME/.bashrc $HOME/.bashrc.old
-		decode_file $BASHRC_TMP > $HOME/.bashrc
+		mv "$HOME/.bashrc" "$HOME/.bashrc.old"
+		decode_file $BASHRC_TMP > "$HOME/.bashrc"
 		echo "done"
 		trap - ERR
-		. $HOME/.bashrc
+		. "$HOME/.bashrc"
 		rm -f $BASHRC_TMP
 		return 0
 	fi
@@ -191,7 +193,7 @@ fi
 export BASHRC_VER=$LOCAL_BASHRC_VER
 
 # Store the current .bashrc in memory for propagation
-export BASHRC="`encode_file $HOME/.bashrc`"
+export BASHRC=`encode_file "$HOME/.bashrc"`
 
 
 # Set a safer PATH
@@ -201,10 +203,10 @@ SYSPATH=$PATH
 # Construct the user's preferred PATH
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:$HOME/bin
 # Check for a personal PATH
-if [ -r $HOME/.PATH ]; then
+if [ -r "$HOME/.PATH" ]; then
 	# And make sure that it hasn't already been added
-	echo $PATH | grep `cat $HOME/.PATH` >/dev/null
-	[ $? != 0 ] && PATH=$PATH:`cat $HOME/.PATH`
+	echo $PATH | grep `cat "$HOME/.PATH"` >/dev/null
+	[ $? != 0 ] && PATH=$PATH:`cat "$HOME/.PATH"`
 fi
 # Check for a system-configured PATH
 if [ -r /etc/PATH ]; then
@@ -307,8 +309,8 @@ DESC_xunion="TransUnion"
 
 # Color used by all hosts on this network
 NETCOLOR=$BRIGHT$WHITE
-[ -r $HOME/.network ] && eval "NETCOLOR=\$NET_`cat $HOME/.network`"
-[ -r $HOME/.network ] && eval "NETDESC=\$DESC_`cat $HOME/.network`"
+[ -r "$HOME/.network" ] && eval NETCOLOR=\$NET_`cat "$HOME/.network"`
+[ -r "$HOME/.network" ] && eval NETDESC=\$DESC_`cat "$HOME/.network"`
 
 # Find out which terminal device we are on
 TERMDEV=`tty | cut -c6-`
@@ -436,7 +438,7 @@ alias which='type -p'
 [ `type -p grm` ] && alias rm='grm -iv'
 
 # Check for User-Defined aliases:
-[ -f $HOME/.alias ] && . $HOME/.alias
+[ -f "$HOME/.alias" ] && . "$HOME/.alias"
 
 # If we are using the GNU versions of these utilities (cp, mv, rm)...
 for util in cp mv rm; do
@@ -460,22 +462,22 @@ function mkenv
 {
 	local env="$HOME/.env-$HOSTNAME.sh"
 	[ ! -z "$DISPLAY" -o ! -z "$SSH_AUTH_SOCK" -o ! -z "$KRB5CCNAME" ] && \
-		rm -f $env > /dev/null
-	[ ! -z "$DISPLAY" ] && echo "DISPLAY=$DISPLAY" >> $env
-	[ ! -z "$SSH_AUTH_SOCK" ] && echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $env
-	[ ! -z "$KRB5CCNAME" ] && echo "KRB5CCNAME=$KRB5CCNAME" >> $env
+		rm -f "$env" > /dev/null
+	[ ! -z "$DISPLAY" ] && echo "DISPLAY=$DISPLAY" >> "$env"
+	[ ! -z "$SSH_AUTH_SOCK" ] && echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> "$env"
+	[ ! -z "$KRB5CCNAME" ] && echo "KRB5CCNAME=$KRB5CCNAME" >> "$env"
 }
 
 if [ "$TERM" != "screen" ]; then
 	mkenv
 else
 	# And if an environment is available for screen, use it
-	[ "$TERM" == "screen" -a -r $HOME/.env-$HOSTNAME.sh ] && \
-		. $HOME/.env-$HOSTNAME.sh
+	[ "$TERM" == "screen" -a -r "$HOME/.env-$HOSTNAME.sh" ] && \
+		. "$HOME/.env-$HOSTNAME.sh"
 fi
 
 # Check for local environment overrides
-[ -r $HOME/.localenv-$HOSTNAME.sh ] && . $HOME/.localenv-$HOSTNAME.sh
+[ -r "$HOME/.localenv-$HOSTNAME.sh" ] && . "$HOME/.localenv-$HOSTNAME.sh"
 
 # Push directory changes on the stack.  This gives us a 'breadcrumb' style
 # trail to backtrack.  Should be handy
@@ -483,7 +485,7 @@ function cd
 {
 	DIR=`echo $1 | sed -e "s#^~#$HOME#"`
 	if [ -z "$DIR" -o "$DIR" == "~" ]; then
-		DIR=$HOME;
+		DIR="$HOME";
 	fi
 	if [ "$DIR" != "." -a "$DIR" != "`pwd`" ]; then
 		# This automatically sets CWD for us.  How Nice.
@@ -536,8 +538,8 @@ function akp
 		return 1
 	fi
 
-	local env=$HOME/.krbcca-$HOSTNAME.sh
-	[ -r $env ] && . $env
+	local env="$HOME/.krbcca-$HOSTNAME.sh"
+	[ -r "$env" ] && . "$env"
 
 	local cc=`lkp | grep $1|sed -e 's/\*//'|cut -d: -f1`
 	if [ -n "$cc" ]; then
@@ -558,19 +560,19 @@ function akp
 			export KRB5CCNAME=${KRBCCA[$i]}
 		        if [ ! -z "${KRBCCA[*]}" ]; then
 		                i=1
-		                printf "KRBCCA=( " > $env
+		                printf "KRBCCA=( " > "$env"
 		                while ([ "${PRINCS[$i]}" ]); do
-		                        printf "[%s]=%s " $i ${KRBCCA[$i]} >> $env
+		                        printf "[%s]=%s " $i ${KRBCCA[$i]} >> "$env"
 		                        let i=$i+1
 		                done
-		                printf ")\n" >> $env
+		                printf ")\n" >> "$env"
 		                i=1
-		                printf "PRINCS=( " >> $env
+		                printf "PRINCS=( " >> "$env"
 		                while ([ "${PRINCS[$i]}" ]); do
-		                        printf "[%s]=%s " $i ${PRINCS[$i]} >> $env
+		                        printf "[%s]=%s " $i ${PRINCS[$i]} >> "$env"
 		                        let i=$i+1
 		                done
-		                printf ")\n" >> $env
+		                printf ")\n" >> "$env"
 		        fi
 
 		fi
@@ -582,8 +584,8 @@ function akp
 # List Kerberos principals
 function lkp
 {
-	local env=$HOME/.krbcca-$HOSTNAME.sh
-	[ -r $env ] && . $env
+	local env="$HOME/.krbcca-$HOSTNAME.sh"
+	[ -r "$env" ] && . "$env"
         i=1;
         while ([ "${PRINCS[$i]}" ]); do
 		if [ "$KRB5CCNAME" == "${KRBCCA[$i]}" ]; then
@@ -599,8 +601,8 @@ function lkp
 # Destroy Kerberos principals
 function dkp
 {
-	local env=$HOME/.krbcca-$HOSTNAME.sh
-	[ -r $env ] && . $env
+	local env="$HOME/.krbcca-$HOSTNAME.sh"
+	[ -r "$env" ] && . "$env"
 	i=1
 	while ([ "${KRBCCA[$i]}" ]); do
 		printf 'Destroying credentials for %s\n' ${PRINCS[$i]}
@@ -608,14 +610,14 @@ function dkp
 		let i=$i+1
 	done
 	unset KRB5CCNAME KRBCCA PRINCS
-	rm -f $env > /dev/null 2>&1
+	rm -f "$env" > /dev/null 2>&1
 }
 
 # Change working Kerberos principal
 function ckp
 {
-	local env=$HOME/.krbcca-$HOSTNAME.sh
-	[ -r $env ] && . $env
+	local env="$HOME/.krbcca-$HOSTNAME.sh"
+	[ -r "$env" ] && . "$env"
 	if [ -z "$1" ]; then
 		printf 'Must select Kerberos principal by number' >&2
 		lkp
