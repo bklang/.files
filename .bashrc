@@ -4,6 +4,7 @@ LOCAL_BASHRC_VER="1.7.4"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Mute warnings about missing B64 encoder on shell startup
 #         Cygwin has titlebar setting functionality
 # v1.7.4  Cygwin now supported
 #         Support ${HOME}s that have a space in the path
@@ -194,7 +195,7 @@ fi
 export BASHRC_VER=$LOCAL_BASHRC_VER
 
 # Store the current .bashrc in memory for propagation
-export BASHRC=`encode_file "$HOME/.bashrc"`
+export BASHRC=`encode_file "$HOME/.bashrc" 2>/dev/null`
 
 
 # Set a safer PATH
