@@ -4,6 +4,7 @@ LOCAL_BASHRC_VER="1.7.4"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Do not attempt to propagate .bashrc if unable to encode file
 #         Mute warnings about missing B64 encoder on shell startup
 #         Cygwin has titlebar setting functionality
 # v1.7.4  Cygwin now supported
@@ -195,7 +196,12 @@ fi
 export BASHRC_VER=$LOCAL_BASHRC_VER
 
 # Store the current .bashrc in memory for propagation
-export BASHRC=`encode_file "$HOME/.bashrc" 2>/dev/null`
+BASHRC=`encode_file "$HOME/.bashrc" 2>/dev/null`
+
+if [ $? -ne 0 ]; then
+	# Since we can't encode a version of our .bashrc, disable auto-propagate
+	unset BASHRC BASHRC_VER
+fi
 
 
 # Set a safer PATH
