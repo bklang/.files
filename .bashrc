@@ -1,9 +1,14 @@
 #!/bin/bash
-LOCAL_BASHRC_VER="1.7.4"
+LOCAL_BASHRC_VER="1.7.5"
 #
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+# v1.7.5  Add _logout() function
+#         Auto-create .bash_logout to run _logout
+#         Add check for host-specific logout script
+#         Add notes about setting Konsole tab color
+#         Set Konsole tab color to red when root
 #         Do not attempt to propagate .bashrc if unable to encode file
 #         Mute warnings about missing B64 encoder on shell startup
 #         Cygwin has titlebar setting functionality
@@ -259,6 +264,19 @@ INVISIBLE='\033[08m'
 # \033[xD moves cursor left x spaces
 CLEAR='\033[2J'
 
+# Other nice escape sequences:
+# Set xterm (or compatible) titlebar:
+# \033]0;foo\007 (replace "foo")
+# Set Konsole tab name:
+# \033]30;foo\007 (replace "foo")
+# Set Konsole (KDE 3.5+) tab color:
+# \033[28;RGBt (replace RGB with the color hex value in decimal form)
+#
+# man bash "PROMPTING" to see escape chars that bash will expand (ex. \u or \h)
+
+# Don't forget to surround any escape sequences in PS1 with '[' and ']'
+# This allows bash to properly calculate line length
+
 
 # Security Checks
 [ -n "$LD_LIBRARY_PATH" ] &&
@@ -353,6 +371,9 @@ PRINTErrCode="\$(returnval=\$?
 		echo \"\\n\[${BRIGHT}${WHITE}[${RED}\]Last command returned error \$returnval\[${WHITE}\]]\"
 	fi)"
 
+# Colorizes the Konsole tab to red EUID=0
+TABCOLOR="\[\$([ \`$ID -u\` == 0 ] && echo -e '\033[28;16711680t' || echo -e '\033[28;0t')\]"
+
 # Prints "[user@host:/path/to/cwd] (terminal device)" properly colorized for the
 # current network. "user" is printed as red if EUID=0
 TOPLINE="\[${NORMAL}\]\n[\$([ \`$ID -u\` == 0 ] && echo \[${BRIGHT}${RED}\] || echo \[${NETCOLOR}\])\u\[${NORMAL}${NETCOLOR}\]@\h:\w\[${NORMAL}\]] (${TERMDEV:-null})\n"
@@ -362,7 +383,7 @@ TOPLINE="\[${NORMAL}\]\n[\$([ \`$ID -u\` == 0 ] && echo \[${BRIGHT}${RED}\] || e
 BOTTOMLINE="[\d \t]\$([ \`$ID -u\` == 0 ] && echo \[${BRIGHT}${RED}\] || echo \[${NETCOLOR}\])\\\$\[${NORMAL}\] "
 
 # Colorize the prompt and set the xterm titlebar too
-PS1="${TITLEBAR}${PRINTErrCode}${TOPLINE}${BOTTOMLINE}"
+PS1="${TITLEBAR}${PRINTErrCode}${TABCOLOR}${TOPLINE}${BOTTOMLINE}"
 
 # The colors defined below should map as:
 # directories: bright white over blue
@@ -640,6 +661,22 @@ function ckp
 		return 1
 	fi
 }
+
+# Custom function to run on logout
+function _logout
+{
+	# Check for any host-specific logout script
+	[ -r ${HOME}/.bash_logout-${HOSTNAME} ] && \
+		. ${HOME}/.bash_logout-${HOSTNAME}
+	# Flush Kerberos tickets - just in case
+	dkp
+}
+
+# The ~/.bash_logout only runs when a login session (not necessarily all 
+# interactive sessions) exits.
+[ -r ${HOME}/.bash_logout ] || cat<<EOF>${HOME}/.bash_logout 
+_logout
+EOF
 
 ###
 # User configurables
