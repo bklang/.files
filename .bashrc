@@ -4,7 +4,8 @@ LOCAL_BASHRC_VER="1.7.5"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
-# v1.7.5  Auto-set tab name in Konsole
+# v1.7.5  vi mode must come *before* any key bindings
+#         Auto-set tab name in Konsole
 #         Add _logout() function
 #         Auto-create .bash_logout to run _logout
 #         Add check for host-specific logout script
@@ -685,13 +686,13 @@ EOF
 ###
 # User configurables
 ###
+# I like VI capabilites on the command line
+set -o vi
+
 # Keep that neat functionality from emacs mode where CTRL-L clears the screen
 bind "\C-l":clear-screen
 # Bind ^E to FCEDIT
 bind "\C-e":edit-and-execute-command
-
-# I like VI capabilites on the command line
-set -o vi
 
 # Set a slightly more restrictive umask
 umask 027
