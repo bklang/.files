@@ -4,7 +4,8 @@ LOCAL_BASHRC_VER="1.7.5"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
-# v1.7.5  Add _logout() function
+# v1.7.5  Auto-set tab name in Konsole
+#         Add _logout() function
 #         Auto-create .bash_logout to run _logout
 #         Add check for host-specific logout script
 #         Add notes about setting Konsole tab color
@@ -371,6 +372,9 @@ PRINTErrCode="\$(returnval=\$?
 		echo \"\\n\[${BRIGHT}${WHITE}[${RED}\]Last command returned error \$returnval\[${WHITE}\]]\"
 	fi)"
 
+# Renames the Konsole tab to the current hostname
+TABNAME="\[$(echo -e '\033]30;\h\007')\]"
+
 # Colorizes the Konsole tab to red EUID=0
 TABCOLOR="\[\$([ \`$ID -u\` == 0 ] && echo -e '\033[28;16711680t' || echo -e '\033[28;0t')\]"
 
@@ -383,7 +387,7 @@ TOPLINE="\[${NORMAL}\]\n[\$([ \`$ID -u\` == 0 ] && echo \[${BRIGHT}${RED}\] || e
 BOTTOMLINE="[\d \t]\$([ \`$ID -u\` == 0 ] && echo \[${BRIGHT}${RED}\] || echo \[${NETCOLOR}\])\\\$\[${NORMAL}\] "
 
 # Colorize the prompt and set the xterm titlebar too
-PS1="${TITLEBAR}${PRINTErrCode}${TABCOLOR}${TOPLINE}${BOTTOMLINE}"
+PS1="${TITLEBAR}${PRINTErrCode}${TABCOLOR}${TABNAME}${TOPLINE}${BOTTOMLINE}"
 
 # The colors defined below should map as:
 # directories: bright white over blue
