@@ -4,6 +4,7 @@ LOCAL_BASHRC_VER="1.7.5"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Re-order the escape sequences so titlebar is set after tab name
 # v1.7.5  vi mode must come *before* any key bindings
 #         Auto-set tab name in Konsole
 #         Add _logout() function
@@ -356,6 +357,12 @@ else
 	ID="id"
 fi
 
+# Renames the Konsole tab to the current hostname
+TABNAME="\[$(echo -e '\033]30;\h\007')\]"
+
+# Colorizes the Konsole tab to red EUID=0
+TABCOLOR="\[\$([ \`$ID -u\` == 0 ] && echo -e '\033[28;16711680t' || echo -e '\033[28;0t')\]"
+
 # Prepare the titlebar string if we happen to be on an xterm (or a derivative).
 case $TERM in
 	xterm*|screen|cygwin)
@@ -373,12 +380,6 @@ PRINTErrCode="\$(returnval=\$?
 		echo \"\\n\[${BRIGHT}${WHITE}[${RED}\]Last command returned error \$returnval\[${WHITE}\]]\"
 	fi)"
 
-# Renames the Konsole tab to the current hostname
-TABNAME="\[$(echo -e '\033]30;\h\007')\]"
-
-# Colorizes the Konsole tab to red EUID=0
-TABCOLOR="\[\$([ \`$ID -u\` == 0 ] && echo -e '\033[28;16711680t' || echo -e '\033[28;0t')\]"
-
 # Prints "[user@host:/path/to/cwd] (terminal device)" properly colorized for the
 # current network. "user" is printed as red if EUID=0
 TOPLINE="\[${NORMAL}\]\n[\$([ \`$ID -u\` == 0 ] && echo \[${BRIGHT}${RED}\] || echo \[${NETCOLOR}\])\u\[${NORMAL}${NETCOLOR}\]@\h:\w\[${NORMAL}\]] (${TERMDEV:-null})\n"
@@ -388,7 +389,7 @@ TOPLINE="\[${NORMAL}\]\n[\$([ \`$ID -u\` == 0 ] && echo \[${BRIGHT}${RED}\] || e
 BOTTOMLINE="[\d \t]\$([ \`$ID -u\` == 0 ] && echo \[${BRIGHT}${RED}\] || echo \[${NETCOLOR}\])\\\$\[${NORMAL}\] "
 
 # Colorize the prompt and set the xterm titlebar too
-PS1="${TITLEBAR}${PRINTErrCode}${TABCOLOR}${TABNAME}${TOPLINE}${BOTTOMLINE}"
+PS1="${TABCOLOR}${TABNAME}${TITLEBAR}${PRINTErrCode}${TOPLINE}${BOTTOMLINE}"
 
 # The colors defined below should map as:
 # directories: bright white over blue
