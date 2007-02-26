@@ -4,6 +4,8 @@ LOCAL_BASHRC_VER="1.7.5"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Add getent wrapper for HP-UX
+#         Add Sunrise network color
 #         Re-order the escape sequences so titlebar is set after tab name
 # v1.7.5  vi mode must come *before* any key bindings
 #         Auto-set tab name in Konsole
@@ -336,6 +338,9 @@ DESC_speakez="Speakeasy Networks"
 NET_xunion=$GREEN
 DESC_xunion="TransUnion"
 
+NET_sunrise=$BRIGHT$YELLOW$BGBLACK
+DESC_sunrise="Sunrise Assisted Living"
+
 # Color used by all hosts on this network
 NETCOLOR=$BRIGHT$WHITE
 [ -r "$HOME/.network" ] && eval NETCOLOR=\$NET_`cat "$HOME/.network"`
@@ -667,6 +672,23 @@ function ckp
 		return 1
 	fi
 }
+
+if [ `uname -s` == 'HP-UX' ]; then
+	getent()
+	{
+		if [ "$1" == "passwd" ]; then
+			pwget
+			exit $?
+		fi
+		if [ "$1" == "group" ]; then
+			grget
+			exit $?
+		fi
+		printf 'Unknown database: $1\n' >&2
+		exit 1
+	}
+fi
+
 
 # Custom function to run on logout
 function _logout
