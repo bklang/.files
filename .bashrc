@@ -4,6 +4,7 @@ LOCAL_BASHRC_VER="1.7.5"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Add Horde and Nexenta network colors
 #         Add getent wrapper for HP-UX
 #         Add Sunrise network color
 #         Re-order the escape sequences so titlebar is set after tab name
@@ -340,6 +341,12 @@ DESC_xunion="TransUnion"
 
 NET_sunrise=$BRIGHT$YELLOW$BGBLACK
 DESC_sunrise="Sunrise Assisted Living"
+
+NET_horde=$BRIGHT$YELLOW$BGGREEN
+DESC_horde="The Horde Project"
+
+NET_nexenta=$BLACK$BGYELLOW
+DESC_nexenta="Nexenta/GNU Solaris"
 
 # Color used by all hosts on this network
 NETCOLOR=$BRIGHT$WHITE
