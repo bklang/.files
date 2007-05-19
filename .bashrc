@@ -680,22 +680,29 @@ function ckp
 	fi
 }
 
+# HP-UX getent compatibility wrapper
 if [ `uname -s` == 'HP-UX' ]; then
-	getent()
-	{
-		if [ "$1" == "passwd" ]; then
-			pwget
-			exit $?
-		fi
-		if [ "$1" == "group" ]; then
-			grget
-			exit $?
-		fi
-		printf 'Unknown database: $1\n' >&2
-		exit 1
-	}
-fi
+        getent()
+        {
+                grep=""
+                if [ "$1" == "passwd" ]; then
+                        cmd=pwget
+                elif [ "$1" == "group" ]; then
+                        cmd=grget
+                else
+                        printf 'Unknown database: %s\n' $1 >&2
+                        return 1
+                fi
 
+                if [ -n "$2" ]; then
+                        grep='| grep $2'
+                fi
+
+                # GNU getent(1) seems to return 2 if a key is specified
+                # but not found
+                $cmd $grep || return 2
+        }
+fi
 
 # Custom function to run on logout
 function _logout
