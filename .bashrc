@@ -4,6 +4,7 @@ LOCAL_BASHRC_VER="1.7.5"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Add sls function for Nexenta to get at ZFS ACLs easily
 #         Add Horde and Nexenta network colors
 #         Add getent wrapper for HP-UX
 #         Add Sunrise network color
@@ -703,6 +704,12 @@ if [ `uname -s` == 'HP-UX' ]; then
                 $cmd $grep || return 2
         }
 fi
+
+# Nexenta wrapper to view ACLs easily
+sls()
+{
+	SUN_PERSONALITY=1 /bin/ls $*
+}
 
 # Custom function to run on logout
 function _logout
