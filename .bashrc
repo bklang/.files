@@ -521,11 +521,6 @@ for util in cp mv rm; do
 	fi
 done
 
-# Keep that neat functionality from emacs mode where CTRL-L clears the screen
-bind "\C-l":clear-screen
-# Bind ^E to FCEDIT
-bind "\C-e":edit-and-execute-command
-
 # Don't keep a shell history on disk (accidently type a password at the prompt?)
 unset HISTFILE HISTFILESIZE
 # And save all those wonderful settings from above
@@ -769,6 +764,13 @@ EOF
 ###
 # I like vi capabilites on the command line
 set -o vi
+
+# vi mode must come *BEFORE* any additional keybindings
+# Keep that neat functionality from emacs mode where CTRL-L clears the screen
+bind "\C-l":clear-screen
+# Bind ^E to FCEDIT
+bind "\C-e":edit-and-execute-command
+
 # Eastern Time Zone
 export TZ="America/New_York"
 # POSIX C (English)
