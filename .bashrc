@@ -4,6 +4,7 @@ LOCAL_BASHRC_VER="1.7.5"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Add newline to hostname/OS login announcement
 #         Add sls function for Nexenta to get at ZFS ACLs easily
 #         Add Horde and Nexenta network colors
 #         Add getent wrapper for HP-UX
@@ -708,7 +709,7 @@ fi
 # Nexenta wrapper to view ACLs easily
 sls()
 {
-	SUN_PERSONALITY=1 /bin/ls $*
+	SUN_PERSONALITY=1 /bin/ls $@
 }
 
 # Custom function to run on logout
@@ -750,4 +751,4 @@ export TZ="America/New_York"
 export LANG=C
 
 # And finally, remind me which host and OS I'm logged into.
-printf "${BRIGHT}${WHITE}$HOSTNAME `uname -rs`${NORMAL} ${NETCOLOR}${NETDESC}${NORMAL}" >&2
+printf "${BRIGHT}${WHITE}$HOSTNAME `uname -rs`${NORMAL} ${NETCOLOR}${NETDESC}${NORMAL}\n" >&2
