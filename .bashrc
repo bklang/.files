@@ -4,7 +4,11 @@ LOCAL_BASHRC_VER="1.7.6"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
-# v1.7.6  Make the PATH the very first thing configured
+# v1.7.6  Reorganize and label sections to keep similar settings together
+#         Optimize PS1 to use $EUID rather than `id -u`
+#         Only print the Konsole control chars if $TERM is an xterm
+#         Append '$' or '#' to the tab name
+#         Make the PATH and umask the very first thing configured
 #         Add newline to hostname/OS login announcement
 #         Add sls function for Nexenta to get at ZFS ACLs easily
 #         Add Horde and Nexenta network colors
@@ -114,6 +118,9 @@ fi
 # Append the system PATH
 PATH=$PATH:$SYSPATH
 export PATH
+
+# Set a slightly more restrictive umask
+umask 027
 
 # This function must be defined up top because it's used in the self-propagating
 # test below.  Caution! Do not break this functionality and expect auto updates
@@ -296,7 +303,9 @@ CLEAR='\033[2J'
 (echo $PATH | egrep '::|:\.|\.:|:$' > /dev/null) &&
 	printf "${BRIGHT}${RED}${BGWHITE}WARNING: \".\" is in your PATH.${NORMAL}\n" >&2
 
+###
 # Network color definitions
+###
 NET_alkaloid=$ITALIC$BRIGHT$BLUE
 DESC_alkaloid="Alkaloid Networks"
 
@@ -351,6 +360,9 @@ DESC_horde="The Horde Project"
 NET_nexenta=$BLACK$BGYELLOW
 DESC_nexenta="Nexenta/GNU Solaris"
 
+###
+# Create the shell prompt ($PS1)
+###
 # Color used by all hosts on this network
 NETCOLOR=$BRIGHT$WHITE
 [ -r "$HOME/.network" ] && eval NETCOLOR=\$NET_`cat "$HOME/.network"`
@@ -372,21 +384,25 @@ else
 	ID="id"
 fi
 
-# Renames the Konsole tab to the current hostname
-TABNAME="\[$(echo -e '\033]30;\h\007')\]"
-
-# Colorizes the Konsole tab to red EUID=0
-TABCOLOR="\[\$([ \`$ID -u\` == 0 ] && echo -e '\033[28;16711680t' || echo -e '\033[28;0t')\]"
-
 # Prepare the titlebar string if we happen to be on an xterm (or a derivative).
 case $TERM in
 	xterm*|screen|cygwin)
 		TITLEBAR='\[\033]0;\u@\h:\w\007\]'
+
+		# If we're in an xterm, we might be in Konsole
+		# Renames the Konsole tab to the current hostname followed by
+		# '$' for normal user or '#' for root
+		TABNAME='\[\033]30;\h\\$\007)\]'
+		# Colorizes the Konsole tab to red EUID=0
+		TABCOLOR="\[\$([ 0 == \$EUID ] && echo -e '\033[28;16711680t' || echo -e '\033[28;0t')\]"
 		;;
 	*)
 		TITLEBAR=''
+		TABNAME=''
+		TABCOLOR=''
 		;;
 esac
+
 
 # Prints "[Last command returned error X]" where X is the return code of the
 # last executed program when not 0
@@ -397,15 +413,18 @@ PRINTErrCode="\$(returnval=\$?
 
 # Prints "[user@host:/path/to/cwd] (terminal device)" properly colorized for the
 # current network. "user" is printed as red if EUID=0
-TOPLINE="\[${NORMAL}\]\n[\$([ \`$ID -u\` == 0 ] && echo \[${BRIGHT}${RED}\] || echo \[${NETCOLOR}\])\u\[${NORMAL}${NETCOLOR}\]@\h:\w\[${NORMAL}\]] (${TERMDEV:-null})\n"
+TOPLINE="\[${NORMAL}\]\n[\$([ 0 == \$EUID ] && echo \[${BRIGHT}${RED}\] || echo \[${NETCOLOR}\])\u\[${NORMAL}${NETCOLOR}\]@\h:\w\[${NORMAL}\]] (${TERMDEV:-null})\n"
 
 # Prints "[date time]$ " substituting the current date and time.  "$" will print
 # as a red "#" when EUID=0
-BOTTOMLINE="[\d \t]\$([ \`$ID -u\` == 0 ] && echo \[${BRIGHT}${RED}\] || echo \[${NETCOLOR}\])\\\$\[${NORMAL}\] "
+BOTTOMLINE="[\d \t]\$([ 0 == \$EUID ] && echo \[${BRIGHT}${RED}\] || echo \[${NETCOLOR}\])\\\$\[${NORMAL}\] "
 
 # Colorize the prompt and set the xterm titlebar too
 PS1="${TABCOLOR}${TABNAME}${TITLEBAR}${PRINTErrCode}${TOPLINE}${BOTTOMLINE}"
 
+###
+# ls colors
+###
 # The colors defined below should map as:
 # directories: bright white over blue
 # symlinks: bright cyan
@@ -425,6 +444,9 @@ LS_COLORS='no=00:fi=00:di=37;44:ln=01;36:pi=40;33:so=01;35:bd=40;33;01:cd=40;33;
 # For BSD ls
 LSCOLORS="HeGxFxDxCxDxDxHBHdehBh"
 
+###
+# Environment customization
+###
 # I like VIM.  If I can't have my VIM, give me VI.
 if [ -x "`type -p vim`" ]; then
 	VISUAL=`type -p vim`
@@ -499,11 +521,19 @@ for util in cp mv rm; do
 	fi
 done
 
+# Keep that neat functionality from emacs mode where CTRL-L clears the screen
+bind "\C-l":clear-screen
+# Bind ^E to FCEDIT
+bind "\C-e":edit-and-execute-command
+
 # Don't keep a shell history on disk (accidently type a password at the prompt?)
 unset HISTFILE HISTFILESIZE
 # And save all those wonderful settings from above
 export EDITOR PAGER PATH PS1 LS_COLORS LSCOLORS VISUAL
 
+###
+# Custom functions
+###
 # If we're logging in from a session that has an ssh agent, X credentials,
 # or a KerberosV credentail cache available, stow them for future screen
 # startups.  Ignore this check if we're a screen so we don't mangle the 
@@ -543,6 +573,9 @@ function cd
 	fi
 }
 
+# Enable quick navigation of the directory stack
+# Usage: jd <directory index #>
+# Get a list of directory indices using 'dirs' (see below)
 function jd
 {
 	JUMP=$1
@@ -571,6 +604,7 @@ function jd
 	fi
 }
 
+# Pretty-print a list of directories on the stack, with numeric indices for 'jd'
 function dirs
 {
 	i=0;
@@ -685,9 +719,8 @@ function ckp
 
 # HP-UX getent compatibility wrapper
 if [ `uname -s` == 'HP-UX' ]; then
-        getent()
+        function getent
         {
-                grep=""
                 if [ "$1" == "passwd" ]; then
                         cmd=pwget
                 elif [ "$1" == "group" ]; then
@@ -699,6 +732,8 @@ if [ `uname -s` == 'HP-UX' ]; then
 
                 if [ -n "$2" ]; then
                         grep='| grep $2'
+		else
+			grep=''
                 fi
 
                 # GNU getent(1) seems to return 2 if a key is specified
@@ -708,7 +743,7 @@ if [ `uname -s` == 'HP-UX' ]; then
 fi
 
 # Nexenta wrapper to view ACLs easily
-sls()
+function sls
 {
 	SUN_PERSONALITY=1 /bin/ls "$@"
 }
@@ -730,26 +765,16 @@ _logout
 EOF
 
 ###
-# User configurables
+# Common per-user configurables
 ###
-# I like VI capabilites on the command line
+# I like vi capabilites on the command line
 set -o vi
-
-# Keep that neat functionality from emacs mode where CTRL-L clears the screen
-bind "\C-l":clear-screen
-# Bind ^E to FCEDIT
-bind "\C-e":edit-and-execute-command
-
-# Set a slightly more restrictive umask
-umask 027
-
-# Automatically logout idle shells after 6 minutes
-#export TMOUT=360
-
 # Eastern Time Zone
 export TZ="America/New_York"
 # POSIX C (English)
 export LANG=C
+# Automatically logout idle shells after 6 minutes
+#export TMOUT=360
 
 # And finally, remind me which host and OS I'm logged into.
 printf "${BRIGHT}${WHITE}$HOSTNAME `uname -rs`${NORMAL} ${NETCOLOR}${NETDESC}${NORMAL}\n" >&2
