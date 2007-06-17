@@ -1,9 +1,10 @@
 #!/bin/bash
-LOCAL_BASHRC_VER="1.7.5"
+LOCAL_BASHRC_VER="1.7.6"
 #
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+# v1.7.6  Make the PATH the very first thing configured
 #         Add newline to hostname/OS login announcement
 #         Add sls function for Nexenta to get at ZFS ACLs easily
 #         Add Horde and Nexenta network colors
@@ -91,6 +92,28 @@ LOCAL_BASHRC_VER="1.7.5"
 # TODO:
 # Add (better) *BSD support
 # Add alternate base64 routines (uudecode/uuencode?)
+
+# Set a safer PATH
+# Save off the system PATH
+SYSPATH=$PATH
+
+# Construct the user's preferred PATH
+PATH=/bin:/usr/bin:/sbin:/usr/sbin:$HOME/bin
+# Check for a personal PATH
+if [ -r "$HOME/.PATH" ]; then
+	# And make sure that it hasn't already been added
+	echo $PATH | grep `cat "$HOME/.PATH"` >/dev/null
+	[ $? != 0 ] && PATH=$PATH:`cat "$HOME/.PATH"`
+fi
+# Check for a system-configured PATH
+if [ -r /etc/PATH ]; then
+	# And make sure that it hasn't already been added
+	echo $PATH | grep `cat /etc/PATH` >/dev/null
+	[ $? != 0 ] && PATH=$PATH:`cat /etc/PATH`
+fi
+# Append the system PATH
+PATH=$PATH:$SYSPATH
+export PATH
 
 # This function must be defined up top because it's used in the self-propagating
 # test below.  Caution! Do not break this functionality and expect auto updates
@@ -215,28 +238,6 @@ if [ $? -ne 0 ]; then
 	# Since we can't encode a version of our .bashrc, disable auto-propagate
 	unset BASHRC BASHRC_VER
 fi
-
-
-# Set a safer PATH
-# Save off the system PATH
-SYSPATH=$PATH
-
-# Construct the user's preferred PATH
-PATH=/bin:/usr/bin:/sbin:/usr/sbin:$HOME/bin
-# Check for a personal PATH
-if [ -r "$HOME/.PATH" ]; then
-	# And make sure that it hasn't already been added
-	echo $PATH | grep `cat "$HOME/.PATH"` >/dev/null
-	[ $? != 0 ] && PATH=$PATH:`cat "$HOME/.PATH"`
-fi
-# Check for a system-configured PATH
-if [ -r /etc/PATH ]; then
-	# And make sure that it hasn't already been added
-	echo $PATH | grep `cat /etc/PATH` >/dev/null
-	[ $? != 0 ] && PATH=$PATH:`cat /etc/PATH`
-fi
-# Append the system PATH
-PATH=$PATH:$SYSPATH
 
 # Lets define some pretty colors
 BLACK='\033[30m'
