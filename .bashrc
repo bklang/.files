@@ -7,7 +7,7 @@ LOCAL_BASHRC_VER="1.7.6"
 # v1.7.6  Reorganize and label sections to keep similar settings together
 #         Optimize PS1 to use $EUID rather than `id -u`
 #         Only print the Konsole control chars if $TERM is an xterm
-#         Append '$' or '#' to the tab name
+#         Append '#' to the tab name when root
 #         Make the PATH and umask the very first thing configured
 #         Add newline to hostname/OS login announcement
 #         Add sls function for Nexenta to get at ZFS ACLs easily
@@ -392,7 +392,7 @@ case $TERM in
 		# If we're in an xterm, we might be in Konsole
 		# Renames the Konsole tab to the current hostname followed by
 		# '$' for normal user or '#' for root
-		TABNAME='\[\033]30;\h\\$\007\]'
+		TABNAME="\[\033]30;\h\$([ 0 == \$EUID ] && echo '#')\007\]"
 		# Colorizes the Konsole tab to red EUID=0
 		TABCOLOR="\[\$([ 0 == \$EUID ] && echo -e '\033[28;16711680t' || echo -e '\033[28;0t')\]"
 		;;
