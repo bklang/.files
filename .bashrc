@@ -709,7 +709,7 @@ fi
 # Nexenta wrapper to view ACLs easily
 sls()
 {
-	SUN_PERSONALITY=1 /bin/ls $@
+	SUN_PERSONALITY=1 /bin/ls "$@"
 }
 
 # Custom function to run on logout
