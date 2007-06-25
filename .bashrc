@@ -4,6 +4,7 @@ LOCAL_BASHRC_VER="1.7.6"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Add schmod (similar to sls)
 # v1.7.6  Reorganize and label sections to keep similar settings together
 #         Optimize PS1 to use $EUID rather than `id -u`
 #         Only print the Konsole control chars if $TERM is an xterm
@@ -737,10 +738,15 @@ if [ `uname -s` == 'HP-UX' ]; then
         }
 fi
 
-# Nexenta wrapper to view ACLs easily
+# Nexenta wrapper to view/modify ACLs easily
 function sls
 {
 	SUN_PERSONALITY=1 /bin/ls "$@"
+}
+
+function schmod
+{
+	SUN_PERSONALITY=1 /bin/chmod "$@"
 }
 
 # Custom function to run on logout
