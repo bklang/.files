@@ -4,6 +4,7 @@ LOCAL_BASHRC_VER="1.7.6"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Fix broken return code handling (thanks Jeff, Bryan)
 #         Add schmod (similar to sls)
 # v1.7.6  Reorganize and label sections to keep similar settings together
 #         Optimize PS1 to use $EUID rather than `id -u`
@@ -421,7 +422,7 @@ TOPLINE="\[${NORMAL}\]\n[\$([ 0 == \$EUID ] && echo \[${BRIGHT}${RED}\] || echo 
 BOTTOMLINE="[\d \t]\$([ 0 == \$EUID ] && echo \[${BRIGHT}${RED}\] || echo \[${NETCOLOR}\])\\\$\[${NORMAL}\] "
 
 # Colorize the prompt and set the xterm titlebar too
-PS1="${TABCOLOR}${TABNAME}${TITLEBAR}${PRINTErrCode}${TOPLINE}${BOTTOMLINE}"
+PS1="${PRINTErrCode}${TABCOLOR}${TABNAME}${TITLEBAR}${TOPLINE}${BOTTOMLINE}"
 
 ###
 # ls colors
