@@ -4,6 +4,7 @@ LOCAL_BASHRC_VER="1.7.7"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Fix echo -n (should be printf); Formatting tweak on upgrade message
 # v1.7.7  How's about we actually *export* $BASHRC so it can propagate, hmmm?
 #         Fix broken return code handling (thanks Jeff, Bryan)
 #         Add schmod (similar to sls)
@@ -132,7 +133,7 @@ umask 027
 function undo_update {
 	echo "Error during update detected." >&2
 	cd "$HOME"
-	echo -n "Rolling back from .bashrc.old..." >&2
+	printf "Rolling back from .bashrc.old..." >&2
 	[ -r .bashrc.old ] && cp -p .bashrc.old .bashrc && echo "Success." >&2 || echo "Error rolling back .bashrc.old!" >&2
 	echo
 	echo "If this error persists, unset BASHRC_VER before connecting again." >&2
@@ -225,7 +226,7 @@ if [ ! -z "$BASHRC_VER" ]; then
 		UPDATE=1;
 	fi
 	if [ $UPDATE -ne 0 ]; then
-		echo "Updating .bashrc to $BASHRC_VER" >&2
+		printf "Updating .bashrc to $BASHRC_VER..." >&2
 		mv "$HOME/.bashrc" "$HOME/.bashrc.old"
 		trap "undo_update $BASHRC_TMP" ERR
 		BASHRC_TMP=`mktemp bashrc-$(id -un)-XXXXXX`
