@@ -1,9 +1,10 @@
 #!/bin/bash
-LOCAL_BASHRC_VER="1.7.6"
+LOCAL_BASHRC_VER="1.7.7"
 #
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+# v1.7.7  How's about we actually *export* $BASHRC so it can propagate, hmmm?
 #         Fix broken return code handling (thanks Jeff, Bryan)
 #         Add schmod (similar to sls)
 # v1.7.6  Reorganize and label sections to keep similar settings together
@@ -131,8 +132,8 @@ umask 027
 function undo_update {
 	echo "Error during update detected." >&2
 	cd "$HOME"
-	echo "Rolling back from .bashrc.bak" >&2
-	[ -r .bashrc.bak ] && mv .bashrc.bak .bashrc && echo "Success." >&2
+	echo -n "Rolling back from .bashrc.old..." >&2
+	[ -r .bashrc.old ] && cp -p .bashrc.old .bashrc && echo "Success." >&2 || echo "Error rolling back .bashrc.old!" >&2
 	echo
 	echo "If this error persists, unset BASHRC_VER before connecting again." >&2
 	echo
@@ -225,10 +226,10 @@ if [ ! -z "$BASHRC_VER" ]; then
 	fi
 	if [ $UPDATE -ne 0 ]; then
 		echo "Updating .bashrc to $BASHRC_VER" >&2
-		BASHRC_TMP=`mktemp bashrc-$(id -un)-XXXXXX`
-		trap "undo_update $BASHRC_TMP" ERR
-		printf "$BASHRC" > $BASHRC_TMP
 		mv "$HOME/.bashrc" "$HOME/.bashrc.old"
+		trap "undo_update $BASHRC_TMP" ERR
+		BASHRC_TMP=`mktemp bashrc-$(id -un)-XXXXXX`
+		printf "$BASHRC" > $BASHRC_TMP
 		decode_file $BASHRC_TMP > "$HOME/.bashrc"
 		echo "done"
 		trap - ERR
@@ -246,6 +247,8 @@ BASHRC=`encode_file "$HOME/.bashrc" 2>/dev/null`
 if [ $? -ne 0 ]; then
 	# Since we can't encode a version of our .bashrc, disable auto-propagate
 	unset BASHRC BASHRC_VER
+else
+	export BASHRC
 fi
 
 # Lets define some pretty colors
