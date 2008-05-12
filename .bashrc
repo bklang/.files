@@ -1,9 +1,16 @@
 #!/bin/bash
-LOCAL_BASHRC_VER="1.7.7"
+LOCAL_BASHRC_VER="1.7.8"
+
+# If not running interactively, don't do anything
+[ -z "$PS1" ] && return
+
 #
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+# v1.7.8  Exit immediately if not an interactive shell.  Fixes a KDM login bug
+#           in Kubuntu 8.04 Hardy.
+#         Add System Efficiency (syseff) network color
 #         Fix echo -n (should be printf); Formatting tweak on upgrade message
 # v1.7.7  How's about we actually *export* $BASHRC so it can propagate, hmmm?
 #         Fix broken return code handling (thanks Jeff, Bryan)
@@ -365,6 +372,9 @@ DESC_horde="The Horde Project"
 
 NET_nexenta=$BLACK$BGYELLOW
 DESC_nexenta="Nexenta/GNU Solaris"
+
+NET_syseff=$MAGENTA
+DESC_syseff="System Efficiency"
 
 ###
 # Create the shell prompt ($PS1)
