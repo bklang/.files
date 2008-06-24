@@ -8,6 +8,9 @@ LOCAL_BASHRC_VER="1.7.8"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Allow control characters in 'less' output to display terminal colors
+#         Add arg "-o" to ls alias on OSX to show flags on files when using -l
+#         Make top sort by CPU on OS X
 # v1.7.8  Exit immediately if not an interactive shell.  Fixes a KDM login bug
 #           in Kubuntu 8.04 Hardy.
 #         Add System Efficiency (syseff) network color
@@ -477,21 +480,29 @@ EDITOR=${VISUAL:-ed}
 
 # Less is more.
 if [ -x "`type -p less`" ]; then
-	PAGER="`type -p less` -X"
-#else
-#	# No Less?  Oh well, just give me the system default
-#	unset PAGER
+	# We used to use -A (mouse support; not available on OS X) and -X
+	# (disable termcap init) but these are not needed.
+	# -R: Allow control characters in output.  This permits shell colors.
+	PAGER="`type -p less` -R"
+else
+	# No Less?  Oh well, just give me the system default
+	unset PAGER
 fi
 
-# Set pretty ls options
+# Set distribution-specific options
 ls -N / > /dev/null 2>&1
 if [ $? == 0 ]; then
-	# Hopefully we're got the GNU version
+	# Hopefully we've got the GNU version
 	LS_OPTIONS="-N --color=tty -T 0 -p"
 elif [ "`uname -s`" == "Darwin" ]; then
-	# FIXME: Add additional test to determine MacOSX 10.3+
-	LS_OPTIONS="-G -p"
+	# FIXME: Add additional test to detect MacOSX 10.3+; required for colors
+	# -G: show colors
+	# -p: show file type icons in ls output
+	# -o: show flags when used with -l
+	LS_OPTIONS="-G -p -o"
+	alias top='top -ocpu -s3'
 else
+	# FIXME: Add test for *BSD and add -o at least
 	LS_OPTIONS=""
 fi
 
