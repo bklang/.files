@@ -158,14 +158,14 @@ function decode_file {
 		return 1
 	fi
 
-	if [ -x "`type -p b64decode`" ]; then
+	if [ -x "`type -P b64decode`" ]; then
 		b64decode -r -p $1
 		if [ $? != 0 ]; then
 			echo "Unable to decode BASHRC with b64decode.  Aborting update." >&2
 			return 1
 		fi
-	elif [ -x "`type -p perl`" ]; then
-		PERL=`type -p perl`;
+	elif [ -x "`type -P perl`" ]; then
+		PERL=`type -P perl`;
 		 $PERL -e '
 			use strict;
 			use warnings;
@@ -197,8 +197,8 @@ function encode_file
 		return 1
 	fi
 
-	if [ -x "`type -p perl`" ]; then
-		PERL=`type -p perl`;
+	if [ -x "`type -P perl`" ]; then
+		PERL=`type -P perl`;
 		 $PERL -e '
 			use strict;
 			use warnings;
@@ -467,11 +467,11 @@ LSCOLORS="HeGxFxDxCxDxDxHBHdehBh"
 # Environment customization
 ###
 # I like VIM.  If I can't have my VIM, give me VI.
-if [ -x "`type -p vim`" ]; then
-	VISUAL=`type -p vim`
+if [ -x "`type -P vim`" ]; then
+	VISUAL=`type -P vim`
 	alias vi=$VISUAL
-elif [ -x "`type -p vi`" ]; then
-	VISUAL=`type -p vi`
+elif [ -x "`type -P vi`" ]; then
+	VISUAL=`type -P vi`
 else
 	unset EDITOR VISUAL
 fi
@@ -479,11 +479,11 @@ fi
 EDITOR=${VISUAL:-ed}
 
 # Less is more.
-if [ -x "`type -p less`" ]; then
+if [ -x "`type -P less`" ]; then
 	# We used to use -A (mouse support; not available on OS X) and -X
 	# (disable termcap init) but these are not needed.
 	# -R: Allow control characters in output.  This permits shell colors.
-	PAGER="`type -p less` -R"
+	PAGER="`type -P less` -R"
 else
 	# No Less?  Oh well, just give me the system default
 	unset PAGER
@@ -525,16 +525,16 @@ alias md='mkdir -p'
 alias o='less'
 alias rd='rmdir'
 alias rehash='hash -r'
-alias which='type -p'
+alias which='type -P'
 
 # Attempt to locate GNU versions of common utilities
-[ `type -p gls` ] && alias ls='gls $LS_OPTIONS'
-[ `type -p ggrep` ] && alias grep=ggrep
-[ `type -p gmake` ] && alias make=gmake
-[ `type -p gtar` ] && alias tar=gtar
-[ `type -p gmv` ] && alias mv='gmv -iv'
-[ `type -p gcp` ] && alias cp='gcp -iv'
-[ `type -p grm` ] && alias rm='grm -iv'
+[ `type -P gls` ] && alias ls='gls $LS_OPTIONS'
+[ `type -P ggrep` ] && alias grep=ggrep
+[ `type -P gmake` ] && alias make=gmake
+[ `type -P gtar` ] && alias tar=gtar
+[ `type -P gmv` ] && alias mv='gmv -iv'
+[ `type -P gcp` ] && alias cp='gcp -iv'
+[ `type -P grm` ] && alias rm='grm -iv'
 
 # Check for User-Defined aliases:
 [ -f "$HOME/.alias" ] && . "$HOME/.alias"
