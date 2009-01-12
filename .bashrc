@@ -8,9 +8,11 @@ LOCAL_BASHRC_VER="1.7.8"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
-#         Allow control characters in 'less' output to display terminal colors
+#         Smart case-insensitive searches in less(1)
+#         Colorize grep(1) output by default
+#         Allow control characters in less(1) output to display terminal colors
 #         Add arg "-o" to ls alias on OSX to show flags on files when using -l
-#         Make top sort by CPU on OS X
+#         Make top(1) sort by CPU on OS X
 # v1.7.8  Exit immediately if not an interactive shell.  Fixes a KDM login bug
 #           in Kubuntu 8.04 Hardy.
 #         Add System Efficiency (syseff) network color
@@ -483,7 +485,8 @@ if [ -x "`type -P less`" ]; then
 	# We used to use -A (mouse support; not available on OS X) and -X
 	# (disable termcap init) but these are not needed.
 	# -R: Allow control characters in output.  This permits shell colors.
-	PAGER="`type -P less` -R"
+	# -i: Case-insensitive searches; ignored if the search contains UC chars
+	PAGER="`type -P less` -Ri"
 else
 	# No Less?  Oh well, just give me the system default
 	unset PAGER
@@ -547,6 +550,12 @@ for util in cp mv rm; do
 		alias $util="$util -iv"
 	fi
 done
+
+# If we have a recent version of GNU grep colorize the output
+grep --version|grep GNU >/dev/null 2>&1
+if [ $? -eq 0 ]; then
+    alias grep="grep --color=always"
+fi
 
 # Don't keep a shell history on disk (accidently type a password at the prompt?)
 unset HISTFILE HISTFILESIZE
