@@ -8,11 +8,12 @@ LOCAL_BASHRC_VER="1.7.8"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
-#         Smart case-insensitive searches in less(1)
-#         Colorize grep(1) output by default
-#         Allow control characters in less(1) output to display terminal colors
+#         Update alkaloid network color
+#         Fix ls location and argument determination
+#         Try to find GNU utilities before checking capabilities
+#         Allow control characters in 'less' output to display terminal colors
 #         Add arg "-o" to ls alias on OSX to show flags on files when using -l
-#         Make top(1) sort by CPU on OS X
+#         Make top sort by CPU on OS X
 # v1.7.8  Exit immediately if not an interactive shell.  Fixes a KDM login bug
 #           in Kubuntu 8.04 Hardy.
 #         Add System Efficiency (syseff) network color
@@ -123,7 +124,7 @@ PATH=/bin:/usr/bin:/sbin:/usr/sbin:$HOME/bin
 if [ -r "$HOME/.PATH" ]; then
 	# And make sure that it hasn't already been added
 	echo $PATH | grep `cat "$HOME/.PATH"` >/dev/null
-	[ $? != 0 ] && PATH=$PATH:`cat "$HOME/.PATH"`
+	[ $? != 0 ] && PATH=`cat "$HOME/.PATH"`:$PATH
 fi
 # Check for a system-configured PATH
 if [ -r /etc/PATH ]; then
@@ -324,7 +325,7 @@ CLEAR='\033[2J'
 ###
 # Network color definitions
 ###
-NET_alkaloid=$ITALIC$BRIGHT$BLUE
+NET_alkaloid=$BGBLUE$ITALIC$BRIGHT$WHITE
 DESC_alkaloid="Alkaloid Networks"
 
 NET_alkaloiddev=$BRIGHT$BLUE$BGWHITE
@@ -443,6 +444,16 @@ BOTTOMLINE="[\d \t]\$([ 0 == \$EUID ] && echo \[${BRIGHT}${RED}\] || echo \[${NE
 # Colorize the prompt and set the xterm titlebar too
 PS1="${PRINTErrCode}${TABCOLOR}${TABNAME}${TITLEBAR}${TOPLINE}${BOTTOMLINE}"
 
+# Attempt to locate GNU versions of common utilities
+# Do this first, before any of the below utilities are checked for GNU-ness
+[ `type -P gls` ] && LS=gls || LS=`type -p ls`
+[ `type -P ggrep` ] && alias grep=ggrep
+[ `type -P gmake` ] && alias make=gmake
+[ `type -P gtar` ] && alias tar=gtar
+[ `type -P gmv` ] && alias mv='gmv -iv'
+[ `type -P gcp` ] && alias cp='gcp -iv'
+[ `type -P grm` ] && alias rm='grm -iv'
+
 ###
 # ls colors
 ###
@@ -459,7 +470,7 @@ PS1="${PRINTErrCode}${TABCOLOR}${TABNAME}${TITLEBAR}${TOPLINE}${BOTTOMLINE}"
 # BSD ONLY: "tmp" dirs (world writeable + sticky): black over grey
 # BSD ONLY: world writeable dirs: red over grey
 
-# Set the colors used by LS.  Useful for dark displays like putty.
+# Set the colors used by ls.  Useful for dark displays like putty.
 LS_COLORS='no=00:fi=00:di=37;44:ln=01;36:pi=40;33:so=01;35:bd=40;33;01:cd=40;33;01:or=01;05;37;41:mi=01;05;37;41:ex=01;32:*.cmd=01;32:*.exe=01;32:*.com=01;32:*.btm=01;32:*.bat=01;32:*.sh=01;32:*.csh=01;32:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.gz=01;31:*.bz2=01;31:*.bz=01;31:*.tz=01;31:*.rpm=01;31:*.cpio=01;31:*.jpg=01;35:*.gif=01;35:*.bmp=01;35:*.xbm=01;35:*.xpm=01;35:*.png=01;35:*.tif=01;35:';
 
 # For BSD ls
@@ -485,15 +496,14 @@ if [ -x "`type -P less`" ]; then
 	# We used to use -A (mouse support; not available on OS X) and -X
 	# (disable termcap init) but these are not needed.
 	# -R: Allow control characters in output.  This permits shell colors.
-	# -i: Case-insensitive searches; ignored if the search contains UC chars
-	PAGER="`type -P less` -Ri"
+	PAGER="`type -P less` -R"
 else
 	# No Less?  Oh well, just give me the system default
 	unset PAGER
 fi
 
 # Set distribution-specific options
-ls -N / > /dev/null 2>&1
+$LS -N / > /dev/null 2>&1
 if [ $? == 0 ]; then
 	# Hopefully we've got the GNU version
 	LS_OPTIONS="-N --color=tty -T 0 -p"
@@ -518,26 +528,17 @@ alias -- -='popd'
 alias ..='cd ..'
 alias ...='cd ../..'
 alias beep='printf "\007"'
-alias dir='ls -l'
-alias l='ls -alF'
-alias la='ls -la'
-alias ll='ls -l'
-alias ls='/bin/ls $LS_OPTIONS'
-alias ls-l='ls -l'
+alias dir="$LS -l"
+alias l="$LS -alF"
+alias la="$LS -la"
+alias ll="$LS -l"
+alias ls-l="$LS -l"
+alias ls="$LS $LS_OPTIONS"
 alias md='mkdir -p'
 alias o='less'
 alias rd='rmdir'
 alias rehash='hash -r'
 alias which='type -P'
-
-# Attempt to locate GNU versions of common utilities
-[ `type -P gls` ] && alias ls='gls $LS_OPTIONS'
-[ `type -P ggrep` ] && alias grep=ggrep
-[ `type -P gmake` ] && alias make=gmake
-[ `type -P gtar` ] && alias tar=gtar
-[ `type -P gmv` ] && alias mv='gmv -iv'
-[ `type -P gcp` ] && alias cp='gcp -iv'
-[ `type -P grm` ] && alias rm='grm -iv'
 
 # Check for User-Defined aliases:
 [ -f "$HOME/.alias" ] && . "$HOME/.alias"
@@ -550,12 +551,6 @@ for util in cp mv rm; do
 		alias $util="$util -iv"
 	fi
 done
-
-# If we have a recent version of GNU grep colorize the output
-grep --version|grep GNU >/dev/null 2>&1
-if [ $? -eq 0 ]; then
-    alias grep="grep --color=always"
-fi
 
 # Don't keep a shell history on disk (accidently type a password at the prompt?)
 unset HISTFILE HISTFILESIZE
