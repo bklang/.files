@@ -1,5 +1,5 @@
 #!/bin/bash
-LOCAL_BASHRC_VER="1.7.8"
+LOCAL_BASHRC_VER="1.7.9"
 
 # If not running interactively, don't do anything
 [ -z "$PS1" ] && return
@@ -8,7 +8,7 @@ LOCAL_BASHRC_VER="1.7.8"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
-#         Update alkaloid network color
+# v1.7.9  Update alkaloid network color
 #         Fix ls location and argument determination
 #         Try to find GNU utilities before checking capabilities
 #         Allow control characters in 'less' output to display terminal colors
