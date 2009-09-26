@@ -12,8 +12,12 @@ LOCAL_BASHRC_VER="1.7.9"
 #         Fix ls location and argument determination
 #         Try to find GNU utilities before checking capabilities
 #         Allow control characters in 'less' output to display terminal colors
+#         Set screen window titles like Konsole/iTerm tab names
+#         Smart case-insensitive searches in less(1)
+#         Colorize grep(1) output by default
+#         Allow control characters in less(1) output to display terminal colors
 #         Add arg "-o" to ls alias on OSX to show flags on files when using -l
-#         Make top sort by CPU on OS X
+#         Make top(1) sort by CPU on OS X
 # v1.7.8  Exit immediately if not an interactive shell.  Fixes a KDM login bug
 #           in Kubuntu 8.04 Hardy.
 #         Add System Efficiency (syseff) network color
@@ -124,7 +128,7 @@ PATH=/bin:/usr/bin:/sbin:/usr/sbin:$HOME/bin
 if [ -r "$HOME/.PATH" ]; then
 	# And make sure that it hasn't already been added
 	echo $PATH | grep `cat "$HOME/.PATH"` >/dev/null
-	[ $? != 0 ] && PATH=`cat "$HOME/.PATH"`:$PATH
+	[ $? != 0 ] && PATH=$PATH:`cat "$HOME/.PATH"`
 fi
 # Check for a system-configured PATH
 if [ -r /etc/PATH ]; then
@@ -302,7 +306,7 @@ CLEAR='\033[2J'
 # Other nice escape sequences:
 # Set xterm (or compatible) titlebar:
 # \033]0;foo\007 (replace "foo")
-# Set Konsole tab name:
+# Set Konsole/iTerm tab name:
 # \033]30;foo\007 (replace "foo")
 # Set Konsole (KDE 3.5+) tab color:
 # \033[28;RGBt (replace RGB with the color hex value in decimal form)
@@ -411,10 +415,20 @@ case $TERM in
 	xterm*|screen|cygwin)
 		TITLEBAR='\[\033]0;\u@\h:\w\007\]'
 
-		# If we're in an xterm, we might be in Konsole
-		# Renames the Konsole tab to the current hostname followed by
-		# '$' for normal user or '#' for root
+		# If we're in an xterm, we might be in Konsole or iTerm
+		# Renames the Konsole/iTerm tab to the current hostname
+		# followed by '#' if root
 		TABNAME="\[\033]30;\h\$([ 0 == \$EUID ] && echo '#')\007\]"
+
+		# Set the screen window title if we are in screen
+		if [ "$TERM" == "screen" ]; then
+			tmp="${USER}@$(echo ${HOSTNAME}|cut -d. -f1)"
+			tmp="${tmp}\$([ 0 == \$EUID ] && echo '#')"
+			TABNAME="${TABNAME}"'\[\033k'"${tmp}"'\033\\\]'
+			unset tmp
+		fi
+                # Additionally rename the screen window, if applicable
+                
 		# Colorizes the Konsole tab to red EUID=0
 		TABCOLOR="\[\$([ 0 == \$EUID ] && echo -e '\033[28;16711680t' || echo -e '\033[28;0t')\]"
 		;;
@@ -496,7 +510,8 @@ if [ -x "`type -P less`" ]; then
 	# We used to use -A (mouse support; not available on OS X) and -X
 	# (disable termcap init) but these are not needed.
 	# -R: Allow control characters in output.  This permits shell colors.
-	PAGER="`type -P less` -R"
+	# -i: Case-insensitive searches; ignored if the search contains UC chars
+	PAGER="`type -P less` -Ri"
 else
 	# No Less?  Oh well, just give me the system default
 	unset PAGER
@@ -551,6 +566,12 @@ for util in cp mv rm; do
 		alias $util="$util -iv"
 	fi
 done
+
+# If we have a recent version of GNU grep colorize the output
+grep --version|grep GNU >/dev/null 2>&1
+if [ $? -eq 0 ]; then
+    alias grep="grep --color=always"
+fi
 
 # Don't keep a shell history on disk (accidently type a password at the prompt?)
 unset HISTFILE HISTFILESIZE
