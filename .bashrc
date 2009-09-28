@@ -1,5 +1,5 @@
 #!/bin/bash
-LOCAL_BASHRC_VER="1.7.9"
+LOCAL_BASHRC_VER="1.8.0"
 
 # If not running interactively, don't do anything
 [ -z "$PS1" ] && return
@@ -8,6 +8,7 @@ LOCAL_BASHRC_VER="1.7.9"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+# v1.8.0  Fix ls location bug (type -P)
 # v1.7.9  Update alkaloid network color
 #         Fix ls location and argument determination
 #         Try to find GNU utilities before checking capabilities
@@ -460,7 +461,7 @@ PS1="${PRINTErrCode}${TABCOLOR}${TABNAME}${TITLEBAR}${TOPLINE}${BOTTOMLINE}"
 
 # Attempt to locate GNU versions of common utilities
 # Do this first, before any of the below utilities are checked for GNU-ness
-[ `type -P gls` ] && LS=gls || LS=`type -p ls`
+[ `type -P gls` ] && LS=gls || LS=`type -P ls`
 [ `type -P ggrep` ] && alias grep=ggrep
 [ `type -P gmake` ] && alias make=gmake
 [ `type -P gtar` ] && alias tar=gtar
