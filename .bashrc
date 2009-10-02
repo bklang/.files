@@ -8,6 +8,8 @@ LOCAL_BASHRC_VER="1.8.0"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Replace all "echo -e" references with "printf" (again)
+#         Make sure the user's preferred PATH is in front of the system PATH
 # v1.8.0  Fix ls location bug (type -P)
 # v1.7.9  Update alkaloid network color
 #         Fix ls location and argument determination
@@ -431,7 +433,7 @@ case $TERM in
                 # Additionally rename the screen window, if applicable
                 
 		# Colorizes the Konsole tab to red EUID=0
-		TABCOLOR="\[\$([ 0 == \$EUID ] && echo -e '\033[28;16711680t' || echo -e '\033[28;0t')\]"
+		TABCOLOR="\[\$([ 0 == \$EUID ] && printf '\033[28;16711680t' || printf '\033[28;0t')\]"
 		;;
 	*)
 		TITLEBAR=''
