@@ -8,6 +8,7 @@ LOCAL_BASHRC_VER="1.8.0"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Add function to check Alkaloid nameserver for updates
 #         Replace all "echo -e" references with "printf" (again)
 #         Make sure the user's preferred PATH is in front of the system PATH
 # v1.8.0  Fix ls location bug (type -P)
@@ -801,6 +802,14 @@ function sls
 function schmod
 {
 	SUN_PERSONALITY=1 /bin/chmod "$@"
+}
+
+function nscheck
+{
+	for i in 1 2 3 4;do
+		printf "%s: " dns0${i}
+		host $1 dns0${i}.alkaloid.net | grep "^$1"
+	done
 }
 
 # Custom function to run on logout
