@@ -132,7 +132,7 @@ PATH=/bin:/usr/bin:/sbin:/usr/sbin:$HOME/bin
 if [ -r "$HOME/.PATH" ]; then
 	# And make sure that it hasn't already been added
 	echo $PATH | grep `cat "$HOME/.PATH"` >/dev/null
-	[ $? != 0 ] && PATH=$PATH:`cat "$HOME/.PATH"`
+	[ $? != 0 ] && PATH=`cat "$HOME/.PATH"`:$PATH
 fi
 # Check for a system-configured PATH
 if [ -r /etc/PATH ]; then
