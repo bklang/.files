@@ -8,6 +8,7 @@ LOCAL_BASHRC_VER="1.8.0"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Improve detection of GNU grep on (Open)Solaris
 #         Add function to check Alkaloid nameserver for updates
 #         Replace all "echo -e" references with "printf" (again)
 #         Make sure the user's preferred PATH is in front of the system PATH
@@ -464,8 +465,8 @@ PS1="${PRINTErrCode}${TABCOLOR}${TABNAME}${TITLEBAR}${TOPLINE}${BOTTOMLINE}"
 
 # Attempt to locate GNU versions of common utilities
 # Do this first, before any of the below utilities are checked for GNU-ness
-[ `type -P gls` ] && LS=gls || LS=`type -P ls`
-[ `type -P ggrep` ] && alias grep=ggrep
+[ `type -P gls` ] && LS=gls || LS=ls
+[ `type -P ggrep` ] && GREP=ggrep || GREP=grep
 [ `type -P gmake` ] && alias make=gmake
 [ `type -P gtar` ] && alias tar=gtar
 [ `type -P gmv` ] && alias mv='gmv -iv'
@@ -572,9 +573,9 @@ for util in cp mv rm; do
 done
 
 # If we have a recent version of GNU grep colorize the output
-grep --version|grep GNU >/dev/null 2>&1
+$GREP --version|$GREP GNU >/dev/null 2>&1
 if [ $? -eq 0 ]; then
-    alias grep="grep --color=always"
+    alias grep="$GREP --color=always"
 fi
 
 # Don't keep a shell history on disk (accidently type a password at the prompt?)
