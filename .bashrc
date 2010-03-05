@@ -1,5 +1,5 @@
 #!/bin/bash
-LOCAL_BASHRC_VER="1.8.0"
+LOCAL_BASHRC_VER="1.8.1"
 
 # If not running interactively, don't do anything
 [ -z "$PS1" ] && return
@@ -8,6 +8,7 @@ LOCAL_BASHRC_VER="1.8.0"
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+# v1.8.1  Add bash_completion, improve nscheck (still needs more...)
 #         Improve detection of GNU grep on (Open)Solaris
 #         Add function to check Alkaloid nameserver for updates
 #         Replace all "echo -e" references with "printf" (again)
@@ -575,7 +576,7 @@ done
 # If we have a recent version of GNU grep colorize the output
 $GREP --version|$GREP GNU >/dev/null 2>&1
 if [ $? -eq 0 ]; then
-    alias grep="$GREP --color=always"
+    alias grep="$GREP --color=auto"
 fi
 
 # Don't keep a shell history on disk (accidently type a password at the prompt?)
@@ -809,7 +810,7 @@ function nscheck
 {
 	for i in 1 2 3 4;do
 		printf "%s: " dns0${i}
-		host $1 dns0${i}.alkaloid.net | grep "^$1"
+		host $@ dns0${i}.alkaloid.net | grep ' has ' | awk '{print $NF}'
 	done
 }
 
@@ -847,6 +848,12 @@ export TZ="America/New_York"
 export LANG=C
 # Automatically logout idle shells after 6 minutes
 #export TMOUT=360
+
+# Check for bash-completion
+# FIXME: more locations? This one is from MacPorts
+if [ -f /opt/local/etc/bash_completion ]; then
+	. /opt/local/etc/bash_completion
+fi
 
 # And finally, remind me which host and OS I'm logged into.
 printf "${BRIGHT}${WHITE}$HOSTNAME `uname -rs`${NORMAL} ${NETCOLOR}${NETDESC}${NORMAL}\n" >&2
