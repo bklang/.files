@@ -2,12 +2,14 @@
 LOCAL_BASHRC_VER="1.8.1"
 
 # If not running interactively, don't do anything
-[ -z "$PS1" ] && return
+if [ -n "$PS1" ]; then
 
 #
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Preserve directory breadcrumbs with RVM
+#         Automatically load RVM if available
 # v1.8.1  Add bash_completion, improve nscheck (still needs more...)
 #         Improve detection of GNU grep on (Open)Solaris
 #         Add function to check Alkaloid nameserver for updates
@@ -274,6 +276,9 @@ if [ $? -ne 0 ]; then
 else
 	export BASHRC
 fi
+
+# Start by loading RVM support
+[[ -s $HOME/.rvm/scripts/rvm ]] && source $HOME/.rvm/scripts/rvm
 
 # Lets define some pretty colors
 BLACK='\033[30m'
@@ -609,9 +614,6 @@ else
 		. "$HOME/.env-$HOSTNAME.sh"
 fi
 
-# Check for local environment overrides
-[ -r "$HOME/.localenv-$HOSTNAME.sh" ] && . "$HOME/.localenv-$HOSTNAME.sh"
-
 # Push directory changes on the stack.  This gives us a 'breadcrumb' style
 # trail to backtrack.  Should be handy
 function cd
@@ -623,6 +625,12 @@ function cd
 	if [ "$DIR" != "." -a "$DIR" != "`pwd`" ]; then
 		# This automatically sets CWD for us.  How Nice.
 		pushd "$DIR" > /dev/null
+
+                # preserve the original functionality of RVM's cd
+		local result=$?;
+		__rvm_project_rvmrc;
+		__rvm_after_cd;
+		return $result
 	fi
 }
 
@@ -855,5 +863,13 @@ if [ -f /opt/local/etc/bash_completion ]; then
 	. /opt/local/etc/bash_completion
 fi
 
+# Check for local environment overrides
+[ -r "$HOME/.localenv-$HOSTNAME.sh" ] && . "$HOME/.localenv-$HOSTNAME.sh"
+
 # And finally, remind me which host and OS I'm logged into.
 printf "${BRIGHT}${WHITE}$HOSTNAME `uname -rs`${NORMAL} ${NETCOLOR}${NETDESC}${NORMAL}\n" >&2
+
+else # Test for non-interactive shells
+# We still want to load RVM, even in non-interactive mode
+[[ -s $HOME/.rvm/scripts/rvm ]] && source $HOME/.rvm/scripts/rvm
+fi
