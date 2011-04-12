@@ -1,5 +1,5 @@
 #!/bin/bash
-LOCAL_BASHRC_VER="1.8.1"
+LOCAL_BASHRC_VER="1.8.2"
 
 # If not running interactively, don't do anything
 if [ -n "$PS1" ]; then
@@ -8,6 +8,7 @@ if [ -n "$PS1" ]; then
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+# v1.8.2  Print the current RVM version
 #         Preserve directory breadcrumbs with RVM
 #         Automatically load RVM if available
 # v1.8.1  Add bash_completion, improve nscheck (still needs more...)
@@ -407,6 +408,7 @@ NETCOLOR=$BRIGHT$WHITE
 
 # Find out which terminal device we are on
 TERMDEV=`tty | cut -c6-`
+RVMSTRING=\$\("rvm current 2>/dev/null"\)
 
 # Source global definitions
 if [ -f /etc/bashrc ]; then
@@ -460,7 +462,7 @@ PRINTErrCode="\$(returnval=\$?
 
 # Prints "[user@host:/path/to/cwd] (terminal device)" properly colorized for the
 # current network. "user" is printed as red if EUID=0
-TOPLINE="\[${NORMAL}\]\n[\$([ 0 == \$EUID ] && echo \[${BRIGHT}${RED}\] || echo \[${NETCOLOR}\])\u\[${NORMAL}${NETCOLOR}\]@\h:\w\[${NORMAL}\]] (${TERMDEV:-null})\n"
+TOPLINE="\[${NORMAL}\]\n[\$([ 0 == \$EUID ] && echo \[${BRIGHT}${RED}\] || echo \[${NETCOLOR}\])\u\[${NORMAL}${NETCOLOR}\]@\h:\w\[${NORMAL}\]] (${GREEN}${RVMSTRING:-null}${NORMAL})\n"
 
 # Prints "[date time]$ " substituting the current date and time.  "$" will print
 # as a red "#" when EUID=0
