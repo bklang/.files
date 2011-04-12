@@ -410,7 +410,7 @@ NETCOLOR=$BRIGHT$WHITE
 # Find out which terminal device we are on
 TERMDEV=`tty | cut -c6-`
 RVMSTRING=\$\("rvm current 2>/dev/null"\)
-GITBRANCH=\$\("git status -bs 2>/dev/null | cut -d' ' -f2-"\)
+GITBRANCH=\$\("git status -bs 2>/dev/null | head -n 1 | cut -d' ' -f2-"\)
 
 # Source global definitions
 if [ -f /etc/bashrc ]; then
