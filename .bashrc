@@ -1,5 +1,5 @@
 #!/bin/bash
-LOCAL_BASHRC_VER="1.8.2"
+LOCAL_BASHRC_VER="1.8.3"
 
 # If not running interactively, don't do anything
 if [ -n "$PS1" ]; then
@@ -8,6 +8,10 @@ if [ -n "$PS1" ]; then
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+# v1.8.3  Better RVM integration
+#         More tweaks to PATH handling (again!)
+#         Add Mojo Lingo network
+#         Put Git and RVM on the PS1
 # v1.8.2  Print the current Git branch
 #         Print the current RVM version
 #         Preserve directory breadcrumbs with RVM
@@ -133,21 +137,21 @@ if [ -n "$PS1" ]; then
 SYSPATH=$PATH
 
 # Construct the user's preferred PATH
-PATH=/bin:/usr/bin:/sbin:/usr/sbin:$HOME/bin
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+# Check for a system-configured PATH
+if [ -r /etc/PATH ]; then
+	# And make sure that it hasn't already been added
+	echo $PATH | grep `cat /etc/PATH` >/dev/null
+	[ $? != 0 ] && PATH=`cat /etc/PATH`:$PATH
+fi
 # Check for a personal PATH
 if [ -r "$HOME/.PATH" ]; then
 	# And make sure that it hasn't already been added
 	echo $PATH | grep `cat "$HOME/.PATH"` >/dev/null
 	[ $? != 0 ] && PATH=`cat "$HOME/.PATH"`:$PATH
 fi
-# Check for a system-configured PATH
-if [ -r /etc/PATH ]; then
-	# And make sure that it hasn't already been added
-	echo $PATH | grep `cat /etc/PATH` >/dev/null
-	[ $? != 0 ] && PATH=$PATH:`cat /etc/PATH`
-fi
 # Append the system PATH
-PATH=$PATH:$SYSPATH
+PATH=$HOME/bin:$PATH:$SYSPATH
 export PATH
 
 # Set a slightly more restrictive umask
@@ -280,7 +284,10 @@ else
 fi
 
 # Start by loading RVM support
-[[ -s $HOME/.rvm/scripts/rvm ]] && source $HOME/.rvm/scripts/rvm
+[[ -s /usr/local/rvm/scripts/rvm ]] && rvmload=/usr/local/rvm/scripts/rvm
+[[ -s $HOME/.rvm/scripts/rvm ]]     && rvmload=$HOME/.rvm/scripts/rvm
+source $rvmload
+unset rvmload
 
 # Lets define some pretty colors
 BLACK='\033[30m'
@@ -344,6 +351,9 @@ CLEAR='\033[2J'
 ###
 NET_alkaloid=$BGBLUE$ITALIC$BRIGHT$WHITE
 DESC_alkaloid="Alkaloid Networks"
+
+NET_mojolingo=$BGBLUE$ITALIC$BRIGHT$WHITE
+DESC_mojolingo="Mojo Lingo"
 
 NET_alkaloiddev=$BRIGHT$BLUE$BGWHITE
 DESC_alkaloiddev="Alkaloid Networks - DEVELOPMENT"
@@ -464,7 +474,7 @@ PRINTErrCode="\$(returnval=\$?
 
 # Prints "[user@host:/path/to/cwd] (terminal device)" properly colorized for the
 # current network. "user" is printed as red if EUID=0
-TOPLINE="\[${NORMAL}\]\n[\$([ 0 == \$EUID ] && echo \[${BRIGHT}${RED}\] || echo \[${NETCOLOR}\])\u\[${NORMAL}${NETCOLOR}\]@\h:\w\[${NORMAL}\]] (${BRIGHT}${BLUE}${GITBRANCH}${NORMAL}|${RED}${RVMSTRING:-null}${NORMAL})\n"
+TOPLINE="\[${NORMAL}\]\n[\$([ 0 == \$EUID ] && echo \[${BRIGHT}${RED}\] || echo \[${NETCOLOR}\])\u\[${NORMAL}${NETCOLOR}\]@\h:\w\[${NORMAL}\]] (${BRIGHT}${BLUE}${GITBRANCH}${NORMAL}${BRIGHT}${WHITE}|${NORMAL}${RED}${RVMSTRING:-null}${NORMAL})\n"
 
 # Prints "[date time]$ " substituting the current date and time.  "$" will print
 # as a red "#" when EUID=0
@@ -871,9 +881,12 @@ fi
 [ -r "$HOME/.localenv-$HOSTNAME.sh" ] && . "$HOME/.localenv-$HOSTNAME.sh"
 
 # And finally, remind me which host and OS I'm logged into.
-printf "${BRIGHT}${WHITE}$HOSTNAME `uname -rs`${NORMAL} ${NETCOLOR}${NETDESC}${NORMAL}\n" >&2
+printf "${BRIGHT}${WHITE}$HOSTNAME `uname -rs`${NORMAL} ${NETCOLOR} ${NETDESC} ${NORMAL}\n" >&2
 
 else # Test for non-interactive shells
 # We still want to load RVM, even in non-interactive mode
-[[ -s $HOME/.rvm/scripts/rvm ]] && source $HOME/.rvm/scripts/rvm
+[[ -s /usr/local/rvm/scripts/rvm ]] && rvmload=/usr/local/rvm/scripts/rvm
+[[ -s $HOME/.rvm/scripts/rvm ]]     && rvmload=$HOME/.rvm/scripts/rvm
+source $rvmload
+unset rvmload
 fi
