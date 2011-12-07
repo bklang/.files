@@ -8,6 +8,8 @@ if [ -n "$PS1" ]; then
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         New system-wide RVM script detection
+#         Don't override umask (more trouble than it's worth these days)
 # v1.8.3  Better RVM integration
 #         More tweaks to PATH handling (again!)
 #         Add Mojo Lingo network
@@ -155,7 +157,7 @@ PATH=$HOME/bin:$PATH:$SYSPATH
 export PATH
 
 # Set a slightly more restrictive umask
-umask 027
+#umask 027
 
 # This function must be defined up top because it's used in the self-propagating
 # test below.  Caution! Do not break this functionality and expect auto updates
@@ -282,12 +284,6 @@ if [ $? -ne 0 ]; then
 else
 	export BASHRC
 fi
-
-# Start by loading RVM support
-[[ -s /usr/local/rvm/scripts/rvm ]] && rvmload=/usr/local/rvm/scripts/rvm
-[[ -s $HOME/.rvm/scripts/rvm ]]     && rvmload=$HOME/.rvm/scripts/rvm
-source $rvmload
-unset rvmload
 
 # Lets define some pretty colors
 BLACK='\033[30m'
@@ -877,6 +873,16 @@ if [ -f /opt/local/etc/bash_completion ]; then
 	. /opt/local/etc/bash_completion
 fi
 
+# Start by loading RVM support
+# Old system-wide style
+[[ -s /usr/local/rvm/scripts/rvm ]] && rvmload=/usr/local/rvm/scripts/rvm
+# New system-wide style
+[[ -s /etc/profile.d/rvm.sh ]]      && rvmload=/etc/profile.d/rvm.sh
+# Per-user style
+[[ -s $HOME/.rvm/scripts/rvm ]]     && rvmload=$HOME/.rvm/scripts/rvm
+. $rvmload
+unset rvmload
+
 # Check for local environment overrides
 [ -r "$HOME/.localenv-$HOSTNAME.sh" ] && . "$HOME/.localenv-$HOSTNAME.sh"
 
@@ -885,8 +891,13 @@ printf "${BRIGHT}${WHITE}$HOSTNAME `uname -rs`${NORMAL} ${NETCOLOR} ${NETDESC} $
 
 else # Test for non-interactive shells
 # We still want to load RVM, even in non-interactive mode
+# Old system-wide style
 [[ -s /usr/local/rvm/scripts/rvm ]] && rvmload=/usr/local/rvm/scripts/rvm
+# New system-wide style
+[[ -s /etc/profile.d/rvm.sh ]]      && rvmload=/etc/profile.d/rvm.sh
+# Per-user style
 [[ -s $HOME/.rvm/scripts/rvm ]]     && rvmload=$HOME/.rvm/scripts/rvm
+. $rvmload
 source $rvmload
 unset rvmload
 fi
