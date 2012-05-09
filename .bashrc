@@ -1,5 +1,5 @@
 #!/bin/bash
-LOCAL_BASHRC_VER="1.8.3"
+LOCAL_BASHRC_VER="1.8.4"
 
 # If not running interactively, don't do anything
 if [ -n "$PS1" ]; then
@@ -8,8 +8,11 @@ if [ -n "$PS1" ]; then
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
-#         New system-wide RVM script detection
-#         Don't override umask (more trouble than it's worth these days)
+# v1.8.4  Add rbenv integration and safeties for rvm
+#         Remove the rvm post-cd hooks (they suck anyway)
+#         YET MORE fixes to PATH construction
+#         Make RVM integration a little less noisy
+#         ls -o on OSX should have been ls -O
 # v1.8.3  Better RVM integration
 #         More tweaks to PATH handling (again!)
 #         Add Mojo Lingo network
@@ -133,27 +136,32 @@ if [ -n "$PS1" ]; then
 # TODO:
 # Add (better) *BSD support
 # Add alternate base64 routines (uudecode/uuencode?)
+# Compress before encoding to minimize environment size NON-BC!
 
 # Set a safer PATH
-# Save off the system PATH
+# Save off the default PATH
 SYSPATH=$PATH
 
 # Construct the user's preferred PATH
-PATH=/bin:/usr/bin:/sbin:/usr/sbin
-# Check for a system-configured PATH
-if [ -r /etc/PATH ]; then
-	# And make sure that it hasn't already been added
-	echo $PATH | grep `cat /etc/PATH` >/dev/null
-	[ $? != 0 ] && PATH=`cat /etc/PATH`:$PATH
-fi
+NEWPATH=$HOME/bin
 # Check for a personal PATH
 if [ -r "$HOME/.PATH" ]; then
 	# And make sure that it hasn't already been added
 	echo $PATH | grep `cat "$HOME/.PATH"` >/dev/null
-	[ $? != 0 ] && PATH=`cat "$HOME/.PATH"`:$PATH
+	[ $? != 0 ] && NEWPATH=`cat "$HOME/.PATH"`
 fi
-# Append the system PATH
-PATH=$HOME/bin:$PATH:$SYSPATH
+
+# Check for rbenv
+[ -d $HOME/.rbenv/bin ] && NEWPATH=$NEWPATH:$HOME/.rbenv/bin
+
+# Check for a system-configured PATH
+if [ -r /etc/PATH ]; then
+	# And make sure that it hasn't already been added
+	echo $PATH | grep `cat /etc/PATH` >/dev/null
+	[ $? != 0 ] && NEWPATH=$NEWPATH:`cat /etc/PATH`
+fi
+# Append the default PATH
+PATH=$NEWPATH:$SYSPATH
 export PATH
 
 # Set a slightly more restrictive umask
@@ -416,6 +424,7 @@ NETCOLOR=$BRIGHT$WHITE
 # Find out which terminal device we are on
 TERMDEV=`tty | cut -c6-`
 RVMSTRING=\$\("rvm current 2>/dev/null"\)
+RBENVSTRING=\$\("rbenv version 2>/dev/null |awk '{print \$1}'"\)
 GITBRANCH=\$\("git status -bs 2>/dev/null | head -n 1 | cut -d' ' -f2-"\)
 
 # Source global definitions
@@ -470,7 +479,7 @@ PRINTErrCode="\$(returnval=\$?
 
 # Prints "[user@host:/path/to/cwd] (terminal device)" properly colorized for the
 # current network. "user" is printed as red if EUID=0
-TOPLINE="\[${NORMAL}\]\n[\$([ 0 == \$EUID ] && echo \[${BRIGHT}${RED}\] || echo \[${NETCOLOR}\])\u\[${NORMAL}${NETCOLOR}\]@\h:\w\[${NORMAL}\]] (${BRIGHT}${BLUE}${GITBRANCH}${NORMAL}${BRIGHT}${WHITE}|${NORMAL}${RED}${RVMSTRING:-null}${NORMAL})\n"
+TOPLINE="\[${NORMAL}\]\n[\$([ 0 == \$EUID ] && echo \[${BRIGHT}${RED}\] || echo \[${NETCOLOR}\])\u\[${NORMAL}${NETCOLOR}\]@\h:\w\[${NORMAL}\]] (${BRIGHT}${BLUE}${GITBRANCH}${NORMAL}${BRIGHT}${WHITE}|${NORMAL}${RED}${RVMSTRING:-null}${RBENVSTRING:-null}${NORMAL})\n"
 
 # Prints "[date time]$ " substituting the current date and time.  "$" will print
 # as a red "#" when EUID=0
@@ -548,7 +557,7 @@ elif [ "`uname -s`" == "Darwin" ]; then
 	# -G: show colors
 	# -p: show file type icons in ls output
 	# -o: show flags when used with -l
-	LS_OPTIONS="-G -p -o"
+	LS_OPTIONS="-G -p -O"
 	alias top='top -ocpu -s3'
 else
 	# FIXME: Add test for *BSD and add -o at least
@@ -635,12 +644,6 @@ function cd
 	if [ "$DIR" != "." -a "$DIR" != "`pwd`" ]; then
 		# This automatically sets CWD for us.  How Nice.
 		pushd "$DIR" > /dev/null
-
-                # preserve the original functionality of RVM's cd
-		local result=$?;
-		__rvm_project_rvmrc;
-		__rvm_after_cd;
-		return $result
 	fi
 }
 
@@ -873,15 +876,19 @@ if [ -f /opt/local/etc/bash_completion ]; then
 	. /opt/local/etc/bash_completion
 fi
 
-# Start by loading RVM support
-# Old system-wide style
-[[ -s /usr/local/rvm/scripts/rvm ]] && rvmload=/usr/local/rvm/scripts/rvm
-# New system-wide style
-[[ -s /etc/profile.d/rvm.sh ]]      && rvmload=/etc/profile.d/rvm.sh
-# Per-user style
-[[ -s $HOME/.rvm/scripts/rvm ]]     && rvmload=$HOME/.rvm/scripts/rvm
-. $rvmload
+# Start by loading RVM/RBENV support
+[ -s /usr/local/rvm/scripts/rvm ] && rvmload=/usr/local/rvm/scripts/rvm
+[ -s $HOME/.rvm/scripts/rvm ]     && rvmload=$HOME/.rvm/scripts/rvm
+[ -s $HOME/.rbenv/bin/rbenv ]     && rbenvload=$HOME/.rbenv/bin/rbenv
+if [ -n "$rvmload" -a -n "$rbenvload" ]; then
+  printf "${BRIGHT}${RED}WARNING:${NORMAL} Both rbenv and rvm detected! This will fail. Loading neither.\n" >&2
+  unset rvmload
+  unset rbenvload
+fi
+[ -n "$rvmload" ] && . $rvmload
+[ -n "$rbenvload" ] && eval "$(rbenv init -)"
 unset rvmload
+unset rbenvload
 
 # Check for local environment overrides
 [ -r "$HOME/.localenv-$HOSTNAME.sh" ] && . "$HOME/.localenv-$HOSTNAME.sh"
@@ -890,14 +897,17 @@ unset rvmload
 printf "${BRIGHT}${WHITE}$HOSTNAME `uname -rs`${NORMAL} ${NETCOLOR} ${NETDESC} ${NORMAL}\n" >&2
 
 else # Test for non-interactive shells
-# We still want to load RVM, even in non-interactive mode
-# Old system-wide style
-[[ -s /usr/local/rvm/scripts/rvm ]] && rvmload=/usr/local/rvm/scripts/rvm
-# New system-wide style
-[[ -s /etc/profile.d/rvm.sh ]]      && rvmload=/etc/profile.d/rvm.sh
-# Per-user style
-[[ -s $HOME/.rvm/scripts/rvm ]]     && rvmload=$HOME/.rvm/scripts/rvm
-. $rvmload
-source $rvmload
+# We still want to load RVM/RBENV, even in non-interactive mode
+[ -s /usr/local/rvm/scripts/rvm ] && rvmload=/usr/local/rvm/scripts/rvm
+[ -s $HOME/.rvm/scripts/rvm ]     && rvmload=$HOME/.rvm/scripts/rvm
+[ -s $HOME/.rbenv/bin/rbenv ]     && rbenvload=$HOME/.rbenv/bin/rbenv
+if [ -n "$rvmload" -a -n "$rbenvload" ]; then
+  printf "${BRIGHT}${RED}WARNING:${NORMAL} Both rbenv and rvm detected! This will fail. Loading neither.\n" >&2
+  unset rvmload
+  unset rbenvload
+fi
+[ -n "$rvmload" ] && . $rvmload
+[ -n "$rbenvload" ] && eval "$(rbenv init -)"
 unset rvmload
+unset rbenvload
 fi
