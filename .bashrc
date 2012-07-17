@@ -8,6 +8,7 @@ if [ -n "$PS1" ]; then
 # !!! DO NOT FORGET TO UPDATE LOCAL_BASHRC_VER WHEN COMMITTING CHANGES !!!
 #
 # $Id$
+#         Add virtualenv burrito for Python
 # v1.8.4  Add rbenv integration and safeties for rvm
 #         Remove the rvm post-cd hooks (they suck anyway)
 #         YET MORE fixes to PATH construction
@@ -889,6 +890,7 @@ fi
 [ -n "$rbenvload" ] && eval "$(rbenv init -)"
 unset rvmload
 unset rbenvload
+[ -r ${HOME}/.venvburrito/startup.sh ] && . ${HOME}/.venvburrito/startup.sh
 
 # Check for local environment overrides
 [ -r "$HOME/.localenv-$HOSTNAME.sh" ] && . "$HOME/.localenv-$HOSTNAME.sh"
@@ -910,4 +912,5 @@ fi
 [ -n "$rbenvload" ] && eval "$(rbenv init -)"
 unset rvmload
 unset rbenvload
+[ -r ${HOME}/.venvburrito/startup.sh ] && . ${HOME}/.venvburrito/startup.sh
 fi
