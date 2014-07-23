@@ -23,9 +23,6 @@ if [ -r "$HOME/.PATH" ]; then
 	[ $? != 0 ] && NEWPATH="$NEWPATH:`cat "$HOME/.PATH"`"
 fi
 
-# Check for rbenv
-[ -d $HOME/.rbenv/bin ] && NEWPATH=$NEWPATH:$HOME/.rbenv/bin
-
 # Check for a system-configured PATH
 if [ -r /etc/PATH ]; then
 	# And make sure that it hasn't already been added
