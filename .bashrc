@@ -20,7 +20,7 @@ NEWPATH=$HOME/bin
 if [ -r "$HOME/.PATH" ]; then
 	# And make sure that it hasn't already been added
 	echo $PATH | grep `cat "$HOME/.PATH"` >/dev/null
-	[ $? != 0 ] && NEWPATH=`cat "$HOME/.PATH"`
+	[ $? != 0 ] && NEWPATH="$NEWPATH:`cat "$HOME/.PATH"`"
 fi
 
 # Check for rbenv
