@@ -767,6 +767,12 @@ if [ -d $heroku_toolbelt ]; then
   PATH="$PATH:$heroku_toolbelt"
 fi
 
+# iTerm2 integration: https://iterm2.com/documentation-shell-integration.html
+iterm2_integration_path="$HOME/.iterm2_shell_integration.`basename $SHELL`"
+if [ -r $iterm2_integration_path ]; then
+  source $iterm2_integration_path
+fi
+
 # Check for local environment overrides
 [ -r "$HOME/.localenv-$HOSTNAME.sh" ] && . "$HOME/.localenv-$HOSTNAME.sh"
 
