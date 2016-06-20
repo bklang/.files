@@ -761,6 +761,12 @@ unset rbenvload
 [ -r ${HOME}/.venvburrito/startup.sh ] && . ${HOME}/.venvburrito/startup.sh
 [ -s "${HOME}/.nvm/nvm.sh" ] && . "${HOME}/.nvm/nvm.sh"
 
+# Support for Heroku Toolbelt
+heroku_toolbelt="/usr/local/heroku/bin"
+if [ -d $heroku_toolbelt ]; then
+  PATH="$PATH:$heroku_toolbelt"
+fi
+
 # Check for local environment overrides
 [ -r "$HOME/.localenv-$HOSTNAME.sh" ] && . "$HOME/.localenv-$HOSTNAME.sh"
 
