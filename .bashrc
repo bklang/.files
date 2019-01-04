@@ -282,6 +282,9 @@ DESC_nexenta="Nexenta/GNU Solaris"
 NET_syseff=$MAGENTA
 DESC_syseff="System Efficiency"
 
+NET_power=$BGBLUE$ITALIC$BRIGHT$WHITE
+DESC_power="Power Home Remodeling"
+
 ###
 # Create the shell prompt ($PS1)
 ###
