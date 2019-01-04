@@ -767,6 +767,7 @@ unset rvmload
 unset rbenvload
 [ -r ${HOME}/.venvburrito/startup.sh ] && . ${HOME}/.venvburrito/startup.sh
 [ -s "${HOME}/.nvm/nvm.sh" ] && . "${HOME}/.nvm/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 # Support for Heroku Toolbelt
 heroku_toolbelt="/usr/local/heroku/bin"
