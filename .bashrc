@@ -718,6 +718,9 @@ function _logout
 	dkp
 }
 
+# Circumvent https://github.com/direnv/direnv/issues/210
+shell_session_update() { :; }
+
 # The ~/.bash_logout only runs when a login session (not necessarily all 
 # interactive sessions) exits.
 [ -r ${HOME}/.bash_logout ] || cat<<EOF>${HOME}/.bash_logout 
