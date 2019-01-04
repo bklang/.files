@@ -298,6 +298,7 @@ TERMDEV=`tty | cut -c6-`
 RVMSTRING=\$\("rvm current 2>/dev/null"\)
 RBENVSTRING=\$\("rbenv version 2>/dev/null |awk '{print \$1}'"\)
 GITBRANCH=\$\("git status -bs 2>/dev/null | head -n 1 | cut -d' ' -f2-"\)
+APPCLUSTER=\$\("kubectl config current-context"\)
 
 # Source global definitions
 if [ -f /etc/bashrc ]; then
@@ -351,7 +352,7 @@ PRINTErrCode="\$(returnval=\$?
 
 # Prints "[user@host:/path/to/cwd] (terminal device)" properly colorized for the
 # current network. "user" is printed as red if EUID=0
-TOPLINE="\[${NORMAL}\]\n[\$([ 0 == \$EUID ] && echo \[${BRIGHT}${RED}\] || echo \[${NETCOLOR}\])\u\[${NORMAL}${NETCOLOR}\]@\h:\w\[${NORMAL}\]] (${BRIGHT}${BLUE}${GITBRANCH}${NORMAL}${BRIGHT}${WHITE}|${NORMAL}${RED}${RVMSTRING:-null}${RBENVSTRING:-null}${NORMAL})\n"
+TOPLINE="\[${NORMAL}\]\n[\$([ 0 == \$EUID ] && echo \[${BRIGHT}${RED}\] || echo \[${NETCOLOR}\])\u\[${NORMAL}${NETCOLOR}\]@\h:\w\[${NORMAL}\]] (${BRIGHT}${BLUE}${APPCLUSTER}|${GITBRANCH}${NORMAL}${BRIGHT}${WHITE}|${NORMAL}${RED}${RVMSTRING:-null}${RBENVSTRING:-null}${NORMAL})\n"
 
 # Prints "[date time]$ " substituting the current date and time.  "$" will print
 # as a red "#" when EUID=0
